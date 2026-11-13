@@ -7,8 +7,9 @@ export type OSILayer =
   | 'Presentation'
   | 'Application';
 
-export type ProtocolCategory = 
+export type ProtocolCategory =
   | 'network'
+  | 'transport'
   | 'application'
   | 'iot'
   | 'security'
@@ -21,7 +22,7 @@ export interface ProtocolPacket {
   destination: string;
   type: string;
   summary: string;
-  payload: Record<string, any>;
+  payload: Record<string, unknown>;
   timestamp?: string;
   status?: 'success' | 'warning' | 'error' | 'info';
 }
@@ -69,7 +70,7 @@ export interface Protocol {
   }[];
   interactiveSteps: InteractiveStep[];
   liveSandboxType: 'dns-resolver' | 'http-client' | 'mqtt-broker' | 'tcp-handshake' | 'websocket-chat' | 'generic-simulator';
-  defaultSandboxConfig?: Record<string, any>;
+  defaultSandboxConfig?: Record<string, unknown>;
   quiz: QuizQuestion[];
 }
 

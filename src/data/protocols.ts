@@ -20,9 +20,10 @@ export const PROTOCOLS: Protocol[] = [
 export const CATEGORIES_META = [
   { id: 'all', label: 'All Protocols', count: PROTOCOLS.length, color: 'text-white' },
   { id: 'network', label: 'Network & Internet', count: PROTOCOLS.filter(p => p.category === 'network').length, color: 'text-blue-400' },
+  { id: 'transport', label: 'Transport Layer', count: PROTOCOLS.filter(p => p.category === 'transport').length, color: 'text-cyan-400' },
   { id: 'application', label: 'Application Layer', count: PROTOCOLS.filter(p => p.category === 'application').length, color: 'text-emerald-400' },
   { id: 'iot', label: 'Internet of Things (IoT)', count: PROTOCOLS.filter(p => p.category === 'iot').length, color: 'text-amber-400' },
   { id: 'security', label: 'Security & Auth', count: PROTOCOLS.filter(p => p.category === 'security').length, color: 'text-rose-400' },
-  { id: 'wireless', label: 'Wireless & Radio', count: PROTOCOLS.filter(p => p.category === 'wireless').length, color: 'text-cyan-400' },
+  { id: 'wireless', label: 'Wireless & Radio', count: PROTOCOLS.filter(p => p.category === 'wireless').length, color: 'text-blue-300' },
   { id: 'cloud', label: 'Cloud & Messaging', count: PROTOCOLS.filter(p => p.category === 'cloud').length, color: 'text-purple-400' },
 ];

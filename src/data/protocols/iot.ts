@@ -130,6 +130,18 @@ export const IOT_PROTOCOLS: Protocol[] = [
         options: ['QoS 0 (At most once)', 'QoS 1 (At least once)', 'QoS 2 (Exactly once)', 'QoS 3 (Guaranteed broadcast)'],
         correctAnswer: 2,
         explanation: 'QoS 2 is the highest level of service in MQTT, using a 4-step handshake to guarantee exactly once delivery without duplication.'
+      },
+      {
+        id: 'mqtt-q2',
+        question: 'What does the MQTT Last Will and Testament (LWT) feature do?',
+        options: [
+          'It encrypts the payload with TLS',
+          'It lets the broker publish a pre-registered message if the client disconnects unexpectedly',
+          'It stores the client password for automatic re-authentication',
+          'It compresses retained messages to save bandwidth'
+        ],
+        correctAnswer: 1,
+        explanation: 'The client registers the will message in its CONNECT packet, and the broker publishes it to the specified topic only when the connection drops without a clean DISCONNECT.'
       }
     ]
   },
@@ -191,6 +203,22 @@ export const IOT_PROTOCOLS: Protocol[] = [
           summary: 'Code: 2.05 (Content), Payload: 21.8°C',
           payload: { type: 'ACK', code: '2.05 (Content)', payload: '21.8' }
         }
+      },
+      {
+        step: 3,
+        title: 'Observe Registration for Streaming Updates',
+        description: 'The node re-sends the GET with an Observe option set to 0, asking the gateway to push a notification whenever the temperature reading changes.',
+        actorSource: 'client',
+        actorTarget: 'server',
+        explanation: 'An Observe value of 0 registers the client as an observer under RFC 7641; the gateway then streams unsolicited 2.05 notifications instead of the client polling every few seconds.',
+        packetInfo: {
+          id: 'coap-pkt-3',
+          source: 'Node (UDP)',
+          destination: 'Gateway:5683',
+          type: 'CoAP CON GET + Observe',
+          summary: 'Observe: 0 (Register) | Uri-Path: "temperature" | Token: 0x8f21',
+          payload: { type: 'CON', code: '0.01 (GET)', observe: 0, token: '0x8f21' }
+        }
       }
     ],
     liveSandboxType: 'generic-simulator',
@@ -201,6 +229,13 @@ export const IOT_PROTOCOLS: Protocol[] = [
         options: ['TCP', 'UDP', 'SCTP', 'ICMP'],
         correctAnswer: 1,
         explanation: 'CoAP runs on top of UDP (port 5683) to keep message sizes minimal and eliminate TCP connection setup overhead.'
+      },
+      {
+        id: 'coap-q2',
+        question: 'Which CoAP message type does a receiver send when it cannot process a Confirmable message?',
+        options: ['ACK', 'RST (Reset)', 'NON', 'PING'],
+        correctAnswer: 1,
+        explanation: 'A Reset message rejects a Confirmable message that the receiver cannot process, while an ACK only acknowledges receipt and may carry a piggybacked response.'
       }
     ]
   },
@@ -262,6 +297,22 @@ export const IOT_PROTOCOLS: Protocol[] = [
           summary: 'Hop count=1, LQI=255 (Max Signal)',
           payload: { source: '0x12a4', event: 'Front Door Opened', time: '12:04:12' }
         }
+      },
+      {
+        step: 3,
+        title: 'End Device Discovers Route to Coordinator',
+        description: 'Before sending the next alarm the end device broadcasts a Zigbee NWK Route Request, and every mains-powered router re-broadcasts it while accumulating path cost.',
+        actorSource: 'sensor',
+        actorTarget: 'hub',
+        explanation: 'The coordinator answers the route request with a unicast Route Reply along the best-cost path, so subsequent frames use source routing through the mesh instead of flooding.',
+        packetInfo: {
+          id: 'zb-pkt-3',
+          source: '0x12a4 (DoorSensor)',
+          destination: '0x0000 (Coordinator Hub)',
+          type: 'Zigbee NWK Route Request',
+          summary: 'NWK Command: 0x01 (Route Request) | Radius: 8 | Broadcast',
+          payload: { routeRequestId: 7, destination: '0x0000', radius: 8, pathCost: 0 }
+        }
       }
     ],
     liveSandboxType: 'generic-simulator',
@@ -272,6 +323,13 @@ export const IOT_PROTOCOLS: Protocol[] = [
         options: ['Zigbee End Device', 'Zigbee Router', 'Zigbee Coordinator', 'Zigbee Bridge'],
         correctAnswer: 2,
         explanation: 'Every Zigbee network has exactly one Zigbee Coordinator which initiates the network, chooses the radio channel, and manages cryptographic security keys.'
+      },
+      {
+        id: 'zigbee-q2',
+        question: 'What raw data rate does Zigbee achieve on its standard 2.4 GHz IEEE 802.15.4 radio?',
+        options: ['250 kbps', '11 Mbps', '2 Mbps', '1 Gbps'],
+        correctAnswer: 0,
+        explanation: 'The 2.4 GHz 802.15.4 PHY used by Zigbee carries 250 kbps across 16 channels, which is plenty for small sensor and control payloads.'
       }
     ]
   },
@@ -333,6 +391,22 @@ export const IOT_PROTOCOLS: Protocol[] = [
           summary: 'PUSH_DATA: 1 uplink forwarded',
           payload: { rxpk: [{ rssi: -84, snr: 8.5, data: 'AWcA3AJoPA==' }] }
         }
+      },
+      {
+        step: 3,
+        title: 'ADR Downlink in the RX1 Receive Window',
+        description: 'Because the uplink arrived with a healthy link margin, the Network Server queues a LinkADRReq downlink that the gateway transmits one second later in the RX1 window.',
+        actorSource: 'server',
+        actorTarget: 'gateway',
+        explanation: 'Adaptive Data Rate (ADR) moves the device from SF7 to SF9 and lowers transmit power, cutting airtime and battery drain while keeping the link above the noise floor.',
+        packetInfo: {
+          id: 'lora-pkt-3',
+          source: 'thethings.network:1700',
+          destination: 'Gateway_Eui: 58a0cbfffe801122',
+          type: 'LoRaWAN Downlink (MAC Command)',
+          summary: 'PULL_RESP: LinkADRReq | DataRate: SF9 | TXPower: 14 dBm',
+          payload: { command: 'LinkADRReq', dataRate: 'SF9/125kHz', txPower: 14, chMask: '0x0001', margin: 12 }
+        }
       }
     ],
     liveSandboxType: 'generic-simulator',
@@ -343,6 +417,18 @@ export const IOT_PROTOCOLS: Protocol[] = [
         options: ['Frequency Shift Keying (FSK)', 'Chirp Spread Spectrum (CSS)', 'Orthogonal Frequency-Division Multiplexing (OFDM)', 'Phase Shift Keying (PSK)'],
         correctAnswer: 1,
         explanation: 'LoRa uses Chirp Spread Spectrum (CSS) modulation, which varies frequency over time to achieve superior sensitivity and resistance to interference.'
+      },
+      {
+        id: 'lorawan-q2',
+        question: 'In LoRaWAN Over-The-Air Activation (OTAA), which message completes the join procedure?',
+        options: [
+          'Join-Request',
+          'Join-Accept',
+          'CONFIRMED_DATA_UP',
+          'Beacon'
+        ],
+        correctAnswer: 1,
+        explanation: 'The device sends a Join-Request with its DevEUI, JoinEUI and DevNonce, and the Network Server answers with a Join-Accept encrypted with the AppKey that assigns the DevAddr and session keys.'
       }
     ]
   },
@@ -404,6 +490,22 @@ export const IOT_PROTOCOLS: Protocol[] = [
           summary: 'Cluster: On/Off (0x0006) | Command: Toggle',
           payload: { endpointId: 1, clusterId: '0x0006', command: 'Toggle', status: 'SUCCESS' }
         }
+      },
+      {
+        step: 3,
+        title: 'AddNOC Installs the Operational Certificate',
+        description: 'Inside the PASE session the phone sends AddNOC, handing the plug its Node Operational Certificate, intermediate CA and assigned Node ID.',
+        actorSource: 'phone',
+        actorTarget: 'device',
+        explanation: 'AddNOC binds the device to the controller fabric with a Fabric ID and Node ID, so after CommissioningComplete the plug only answers CASE sessions signed by that fabric.',
+        packetInfo: {
+          id: 'matter-pkt-3',
+          source: 'Commissioner (PASE session)',
+          destination: 'Matter Device',
+          type: 'Matter AddNOC Command',
+          summary: 'Fabric ID: 1 | Node ID: 0xBEEF0001 | ICAC installed',
+          payload: { fabricId: 1, nodeId: '0x000000000000BEEF', caseAdminNode: '0x0000000000000001', icac: true }
+        }
       }
     ],
     liveSandboxType: 'generic-simulator',
@@ -414,6 +516,18 @@ export const IOT_PROTOCOLS: Protocol[] = [
         options: ['IPv4 only', 'IPv6', 'Proprietary RF', 'Zigbee ZDO'],
         correctAnswer: 1,
         explanation: 'Matter is an application layer built strictly on top of IPv6, running over Wi-Fi, Ethernet, and Thread mesh networks.'
+      },
+      {
+        id: 'matter-q2',
+        question: 'What is it called when one Matter device is commissioned into several ecosystems at the same time?',
+        options: [
+          'Multi-Admin across multiple fabrics',
+          'Dual-stack bridging',
+          'Mesh roaming',
+          'Cloud federation'
+        ],
+        correctAnswer: 0,
+        explanation: 'Multi-Admin gives the device one fabric per ecosystem, so Apple Home and Google Home each hold their own credentials and can control the same plug locally.'
       }
     ]
   },
@@ -474,6 +588,22 @@ export const IOT_PROTOCOLS: Protocol[] = [
           summary: 'Byte Count: 4, Reg[0]: 420 (RPM), Reg[1]: 75 (°C)',
           payload: { functionCode: 3, byteCount: 4, registerValues: ['0x01a4', '0x004b'] }
         }
+      },
+      {
+        step: 3,
+        title: 'Exception Response (Illegal Data Address)',
+        description: 'The SCADA master requests 4 registers starting at offset 120, past the end of the PLC register map, so the PLC refuses with a Modbus exception instead of data.',
+        actorSource: 'plc',
+        actorTarget: 'scada',
+        explanation: 'The PLC sets the high bit of the function code (0x03 becomes 0x83) and returns exception code 0x02, telling the master the starting address is not defined on this slave.',
+        packetInfo: {
+          id: 'modbus-pkt-3',
+          source: '10.0.10.100:502',
+          destination: '10.0.10.50:54321',
+          type: 'Modbus TCP Exception Response',
+          summary: 'Function: 0x83 (03 + 0x80) | Exception: 0x02 (Illegal Data Address)',
+          payload: { transactionId: '0x0002', unitId: 1, functionCode: '0x83', exceptionCode: '0x02 (Illegal Data Address)' }
+        }
       }
     ],
     liveSandboxType: 'generic-simulator',
@@ -484,6 +614,18 @@ export const IOT_PROTOCOLS: Protocol[] = [
         options: ['Port 80', 'Port 502', 'Port 1883', 'Port 44818'],
         correctAnswer: 1,
         explanation: 'Modbus TCP communicates on standard IANA port 502.'
+      },
+      {
+        id: 'modbus-q2',
+        question: 'How does a Modbus slave signal that it could not fulfill a request?',
+        options: [
+          'It sets the high bit of the function code and appends an exception code',
+          'It sends a TCP RST and drops the connection',
+          'It returns a register value of all zeros',
+          'It answers with function code 0x00'
+        ],
+        correctAnswer: 0,
+        explanation: 'An exception response ORs 0x80 onto the requested function code and adds a one-byte exception code such as 0x01 (Illegal Function) or 0x02 (Illegal Data Address).'
       }
     ]
   },
@@ -544,6 +686,22 @@ export const IOT_PROTOCOLS: Protocol[] = [
           summary: 'NodeId: "ns=2;s=Joint3.Torque", Value: 42.8 Nm',
           payload: { statusCode: 'Good (0x0000)', value: 42.8, timestamp: '2026-11-13T12:00:00Z' }
         }
+      },
+      {
+        step: 3,
+        title: 'ActivateSession with X.509 User Identity',
+        description: 'The MES client activates the session by presenting an X.509 user identity token and a signature over the server nonce made with the user private key.',
+        actorSource: 'client',
+        actorTarget: 'server',
+        explanation: 'The server verifies the nonce signature against the user certificate and only then exposes the address space; an invalid signature returns Bad_IdentityTokenRejected.',
+        packetInfo: {
+          id: 'opc-pkt-3',
+          source: 'MES_Client',
+          destination: 'Robot_Server:4840',
+          type: 'OPC-UA ActivateSessionRequest',
+          summary: 'UserIdentityToken: X509IdentityToken | Signature: valid | Status: Good',
+          payload: { sessionName: 'MES_Line3', userTokenType: 'X509', nonce: '0x7b3e9c14', statusCode: 'Good (0x0000)' }
+        }
       }
     ],
     liveSandboxType: 'generic-simulator',
@@ -559,6 +717,13 @@ export const IOT_PROTOCOLS: Protocol[] = [
         ],
         correctAnswer: 0,
         explanation: 'OPC-UA integrates rigorous cybersecurity (mutual certificate authentication, AES encryption) and rich object-oriented semantic data structures.'
+      },
+      {
+        id: 'opc-ua-q2',
+        question: 'What is the default TCP port for the OPC-UA binary protocol endpoint (opc.tcp)?',
+        options: ['4840', '502', '44818', '1883'],
+        correctAnswer: 0,
+        explanation: 'OPC-UA binary servers listen on TCP 4840 by default, which is why discovery URLs look like opc.tcp://robot:4840.'
       }
     ]
   },
@@ -619,6 +784,22 @@ export const IOT_PROTOCOLS: Protocol[] = [
           summary: 'Characteristic: 0x2A37, Value: 72 BPM',
           payload: { flags: 0, heartRateBpm: 72 }
         }
+      },
+      {
+        step: 3,
+        title: 'GATT Write to the Heart Rate Control Point',
+        description: 'The app writes the Reset Energy Expended opcode to the Heart Rate Control Point characteristic, and the band confirms with an ATT Write Response.',
+        actorSource: 'phone',
+        actorTarget: 'watch',
+        explanation: 'A Write Request (ATT opcode 0x12) is acknowledged by the server, unlike a notification; the band clears its accumulated energy-expended field and keeps the connection open.',
+        packetInfo: {
+          id: 'ble-pkt-3',
+          source: 'Phone',
+          destination: 'Band',
+          type: 'ATT Write Request',
+          summary: 'Characteristic: 0x2A39 (Heart Rate Control Point) | Value: 0x01',
+          payload: { opcode: '0x12 (Write Request)', handle: '0x0012', value: '0x01', response: '0x13 (Write Response)' }
+        }
       }
     ],
     liveSandboxType: 'generic-simulator',
@@ -629,6 +810,13 @@ export const IOT_PROTOCOLS: Protocol[] = [
         options: ['GATT (Generic Attribute Profile)', 'REST Profile', 'MQTT Profile', 'JSON Profile'],
         correctAnswer: 0,
         explanation: 'GATT defines how two BLE devices transfer data using Services, Characteristics, and Descriptors.'
+      },
+      {
+        id: 'ble-q2',
+        question: 'Which RF channels carry BLE advertising packets?',
+        options: ['Channels 37, 38 and 39', 'Channels 0, 1 and 2', 'Channels 1, 6 and 11', 'Channels 39, 40 and 41'],
+        correctAnswer: 0,
+        explanation: 'BLE advertises on channels 37, 38 and 39, which are deliberately placed between the 37 data channels to reduce collisions with Wi-Fi traffic.'
       }
     ]
   },
@@ -690,6 +878,22 @@ export const IOT_PROTOCOLS: Protocol[] = [
           summary: 'DOOR_LOCK_OPERATION_SET (0xFF = SECURED)',
           payload: { command: 'DOOR_LOCK_OPERATION_SET', status: 'SECURED', ack: true }
         }
+      },
+      {
+        step: 3,
+        title: 'S2 Bootstrapping During Inclusion',
+        description: 'When the deadbolt is added to the network, the hub and the lock run S2 bootstrapping and the user confirms the first five digits of the device DSK printed on the lock body.',
+        actorSource: 'hub',
+        actorTarget: 'lock',
+        explanation: 'S2 grants keys per security class only after the DSK check passes, so the lock receives S2_Authenticated and S2_Unauthenticated keys while the controller learns its command classes.',
+        packetInfo: {
+          id: 'zw-pkt-3',
+          source: 'Hub (Node 1)',
+          destination: 'New Node (Node 5)',
+          type: 'Z-Wave S2 Inclusion',
+          summary: 'Command: SECURITY_2_NETWORK_KEY_GET | Scheme: 1 (Authenticated)',
+          payload: { inclusionController: 1, dskPrefix: '12345', scheme: 'Authenticated (S2_ACCESS_CONTROL)' }
+        }
       }
     ],
     liveSandboxType: 'generic-simulator',
@@ -705,6 +909,13 @@ export const IOT_PROTOCOLS: Protocol[] = [
         ],
         correctAnswer: 0,
         explanation: 'Z-Wave uses sub-GHz frequencies (e.g., 908.42 MHz in North America, 868.42 MHz in Europe), avoiding the congested 2.4 GHz Wi-Fi spectrum.'
+      },
+      {
+        id: 'zwave-q2',
+        question: 'How many nodes can a single Z-Wave network address?',
+        options: ['232', '50', '1024', '65535'],
+        correctAnswer: 0,
+        explanation: 'Z-Wave allocates 8-bit node IDs but reserves the top range for the controller, leaving 232 usable node IDs per Home ID.'
       }
     ]
   },
@@ -766,6 +977,22 @@ export const IOT_PROTOCOLS: Protocol[] = [
           summary: 'Speedometer updated: 65 km/h',
           payload: { speedKmh: 65, absActive: false, crcStatus: 'VALID_15BIT_CRC' }
         }
+      },
+      {
+        step: 3,
+        title: 'Error Frame and Error Counter Update',
+        description: 'A bit error in the data phase makes the gauge cluster transmit an Error Flag of six dominant bits, and every node on the bus discards the corrupted frame.',
+        actorSource: 'cluster',
+        actorTarget: 'bus',
+        explanation: 'The six dominant bits violate bit stuffing, so all nodes detect the error at the same bit; the transmitter increments its Transmit Error Counter by 8 and retries after intermission.',
+        packetInfo: {
+          id: 'can-pkt-3',
+          source: 'Cluster',
+          destination: 'CAN_BUS',
+          type: 'CAN Error Frame',
+          summary: 'Error Flag: 6 dominant bits | Error: Bit Error | TEC: 8, REC: 0',
+          payload: { errorType: 'Bit Error', errorFlag: '6 dominant bits', transmitErrorCounter: 8, receiveErrorCounter: 0 }
+        }
       }
     ],
     liveSandboxType: 'generic-simulator',
@@ -781,6 +1008,18 @@ export const IOT_PROTOCOLS: Protocol[] = [
         ],
         correctAnswer: 0,
         explanation: 'In CAN bus arbitration, dominant "0" bits override recessive "1" bits on the wire, so the message with the lowest identifier transmits without interruption.'
+      },
+      {
+        id: 'canbus-q2',
+        question: 'What voltages do CAN_H and CAN_L carry during a recessive bit?',
+        options: [
+          'Both lines at about 2.5 V, giving a near-zero differential',
+          'CAN_H at 3.5 V and CAN_L at 1.5 V',
+          'CAN_H at 0 V and CAN_L at 5 V',
+          'Both lines at 5 V'
+        ],
+        correctAnswer: 0,
+        explanation: 'A recessive bit drives both wires to roughly 2.5 V so the differential is close to 0 V, while a dominant bit pulls CAN_H to 3.5 V and CAN_L to 1.5 V for a 2 V differential.'
       }
     ]
   },
@@ -841,6 +1080,22 @@ export const IOT_PROTOCOLS: Protocol[] = [
           summary: 'Analog-Input #1 present-value: 44.5 °F',
           payload: { objectType: 'analog-input', objectInstance: 1, property: 'present-value', value: 44.5, units: 'degrees-fahrenheit' }
         }
+      },
+      {
+        step: 3,
+        title: 'COV Notification Pushes a Value Change',
+        description: 'The BMS had issued SubscribeCOV for Analog Input #1, so when supply temperature drifts past the 0.5 °F increment the chiller pushes an unconfirmed COVNotification.',
+        actorSource: 'hvac',
+        actorTarget: 'bms',
+        explanation: 'Change-of-Value reporting sends only meaningful deltas instead of constant polling, which keeps BACnet/IP traffic low on buildings with thousands of objects.',
+        packetInfo: {
+          id: 'bac-pkt-3',
+          source: 'ChillerController',
+          destination: 'BMS',
+          type: 'BACnet COVNotification (Unconfirmed)',
+          summary: 'Analog-Input #1 present-value: 43.8 °F | Subscriber Process ID: 12',
+          payload: { subscriberProcessId: 12, monitoredObject: 'analog-input,1', property: 'present-value', value: 43.8, units: 'degrees-fahrenheit' }
+        }
       }
     ],
     liveSandboxType: 'generic-simulator',
@@ -851,6 +1106,13 @@ export const IOT_PROTOCOLS: Protocol[] = [
         options: ['Port 47808 (hex 0xBAC0)', 'Port 80', 'Port 502', 'Port 1883'],
         correctAnswer: 0,
         explanation: 'BACnet/IP uses UDP port 47808, chosen because its hexadecimal representation is 0xBAC0.'
+      },
+      {
+        id: 'bacnet-q2',
+        question: 'Which BACnet service lets a workstation receive value changes instead of polling every object?',
+        options: ['SubscribeCOV', 'Who-Is', 'ReadPropertyMultiple', 'AtomicWriteFile'],
+        correctAnswer: 0,
+        explanation: 'SubscribeCOV registers the workstation for Change-of-Value notifications, and the device then sends COVNotification messages whenever a monitored property exceeds its increment.'
       }
     ]
   }

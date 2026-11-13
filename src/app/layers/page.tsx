@@ -2,45 +2,45 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { OSI_LAYERS, TCPIP_LAYERS, LayerInfo } from '@/data/layers';
+import { OSI_LAYERS } from '@/data/layers';
 import EncapsulationSimulator from '@/components/EncapsulationSimulator';
 import QuizSection from '@/components/QuizSection';
 import { QuizQuestion } from '@/types/protocol';
-import { Layers, ArrowRight, ArrowDown, Shield, Server, Network, Cpu, Terminal, CheckCircle2, BookOpen, Sparkles, HelpCircle } from 'lucide-react';
+import { Layers, ArrowRight, Terminal } from 'lucide-react';
+
+const LAYER_QUIZ: QuizQuestion[] = [
+  {
+    id: 'osi-q1',
+    question: 'What is the Protocol Data Unit (PDU) called at the Network Layer (Layer 3)?',
+    options: ['Frame', 'Packet', 'Segment', 'Bit'],
+    correctAnswer: 1,
+    explanation: 'At Layer 3 (Network), the PDU is a Packet. At Layer 4 it is a Segment, at Layer 2 it is a Frame, and at Layer 1 it is Bits.'
+  },
+  {
+    id: 'osi-q2',
+    question: 'Which OSI layers are merged into the single "Application Layer" in the practical TCP/IP 4-layer model?',
+    options: [
+      'Layers 1, 2, and 3',
+      'Layers 4, 5, and 6',
+      'Layers 7, 6, and 5 (Application, Presentation, Session)',
+      'Layers 3 and 4 only'
+    ],
+    correctAnswer: 2,
+    explanation: 'The TCP/IP model simplifies the stack by combining OSI Layers 7 (Application), 6 (Presentation), and 5 (Session) into a single Application layer.'
+  },
+  {
+    id: 'osi-q3',
+    question: 'At which OSI layer do physical MAC hardware addresses and Ethernet switching operate?',
+    options: ['Physical Layer (Layer 1)', 'Data Link Layer (Layer 2)', 'Network Layer (Layer 3)', 'Transport Layer (Layer 4)'],
+    correctAnswer: 1,
+    explanation: 'Layer 2 (Data Link) manages MAC hardware addressing, Ethernet framing, and local switch forwarding.'
+  }
+];
 
 export default function LayersPage() {
   const [selectedLayerNumber, setSelectedLayerNumber] = useState<number>(7);
 
-  const activeLayer = OSI_LAYERS.find((l) => l.number === selectedLayerNumber) || OSI_LAYERS[0];
-
-  const LAYER_QUIZ: QuizQuestion[] = [
-    {
-      id: 'osi-q1',
-      question: 'What is the Protocol Data Unit (PDU) called at the Network Layer (Layer 3)?',
-      options: ['Frame', 'Packet', 'Segment', 'Bit'],
-      correctAnswer: 1,
-      explanation: 'At Layer 3 (Network), the PDU is a Packet. At Layer 4 it is a Segment, at Layer 2 it is a Frame, and at Layer 1 it is Bits.'
-    },
-    {
-      id: 'osi-q2',
-      question: 'Which OSI layers are merged into the single "Application Layer" in the practical TCP/IP 4-layer model?',
-      options: [
-        'Layers 1, 2, and 3',
-        'Layers 4, 5, and 6',
-        'Layers 7, 6, and 5 (Application, Presentation, Session)',
-        'Layers 3 and 4 only'
-      ],
-      correctAnswer: 2,
-      explanation: 'The TCP/IP model simplifies the stack by combining OSI Layers 7 (Application), 6 (Presentation), and 5 (Session) into a single Application layer.'
-    },
-    {
-      id: 'osi-q3',
-      question: 'At which OSI layer do physical MAC hardware addresses and Ethernet switching operate?',
-      options: ['Physical Layer (Layer 1)', 'Data Link Layer (Layer 2)', 'Network Layer (Layer 3)', 'Transport Layer (Layer 4)'],
-      correctAnswer: 1,
-      explanation: 'Layer 2 (Data Link) manages MAC hardware addressing, Ethernet framing, and local switch forwarding.'
-    }
-  ];
+  const activeLayer = OSI_LAYERS.find((layer) => layer.number === selectedLayerNumber) || OSI_LAYERS[0];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-16">
@@ -105,7 +105,9 @@ export default function LayersPage() {
                 return (
                   <button
                     key={layer.number}
+                    type="button"
                     onClick={() => setSelectedLayerNumber(layer.number)}
+                    aria-pressed={isSelected}
                     className={`w-full text-left p-3.5 rounded-xl border transition-all flex items-center justify-between group ${
                       isSelected
                         ? 'bg-indigo-950/70 border-indigo-500 shadow-lg shadow-indigo-500/20 scale-[1.02]'
@@ -256,7 +258,7 @@ export default function LayersPage() {
 
       {/* SECTION 3: Knowledge Quiz */}
       <section>
-        <QuizSection questions={LAYER_QUIZ} protocolName="OSI 7-Layer & TCP/IP Model" />
+        <QuizSection questions={LAYER_QUIZ} protocolName="OSI 7-Layer & TCP/IP Model" protocolId="osi-layers" />
       </section>
     </div>
   );

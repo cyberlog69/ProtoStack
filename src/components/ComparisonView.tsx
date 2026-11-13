@@ -5,9 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { PROTOCOLS } from '@/data/protocols';
 import { COMPARISON_PRESETS } from '@/data/comparisons';
-import { Protocol } from '@/types/protocol';
-import { getLayerColor, getCategoryBadge } from '@/lib/utils';
-import { ArrowRight, Check, X, Play, ArrowLeftRight, Sparkles, Layers, Shield, Terminal } from 'lucide-react';
+import { getCategoryBadge } from '@/lib/utils';
+import { Check, X, Play, ArrowLeftRight, Sparkles, AlertTriangle } from 'lucide-react';
 
 interface ComparisonViewProps {
   initialSlugA?: string;
@@ -19,8 +18,23 @@ export default function ComparisonView({ initialSlugA = 'tcp', initialSlugB = 'u
   const [slugA, setSlugA] = useState(initialSlugA);
   const [slugB, setSlugB] = useState(initialSlugB);
 
-  const protocolA = PROTOCOLS.find((p) => p.slug === slugA) || PROTOCOLS[0];
-  const protocolB = PROTOCOLS.find((p) => p.slug === slugB) || PROTOCOLS[1];
+  const protocolA = PROTOCOLS.find((p) => p.slug === slugA);
+  const protocolB = PROTOCOLS.find((p) => p.slug === slugB);
+
+  if (!protocolA || !protocolB) {
+    return (
+      <div className="rounded-2xl border border-amber-500/40 bg-amber-950/20 p-8 text-center space-y-2">
+        <AlertTriangle className="w-8 h-8 text-amber-400 mx-auto" aria-hidden="true" />
+        <h2 className="text-base font-bold text-white">Unknown protocol in this comparison</h2>
+        <p className="text-xs text-slate-300">
+          One of the requested slugs does not exist. Pick two protocols from the selectors above.
+        </p>
+        <Link href="/compare" className="inline-block text-xs font-semibold text-indigo-300 hover:underline">
+          Reset comparison
+        </Link>
+      </div>
+    );
+  }
 
   const presetMatch = COMPARISON_PRESETS.find(
     (p) => (p.slugA === slugA && p.slugB === slugB) || (p.slugA === slugB && p.slugB === slugA)
@@ -53,7 +67,9 @@ export default function ComparisonView({ initialSlugA = 'tcp', initialSlugB = 'u
             return (
               <button
                 key={p.title}
+                type="button"
                 onClick={() => handleSelectPreset(p.slugA, p.slugB)}
+                aria-pressed={isActive}
                 className={`px-3 py-1.5 rounded-xl text-xs font-mono transition-all border ${
                   isActive
                     ? 'bg-indigo-600 text-white border-indigo-400 font-bold shadow-md shadow-indigo-600/30'
@@ -71,10 +87,11 @@ export default function ComparisonView({ initialSlugA = 'tcp', initialSlugB = 'u
       <div className="grid grid-cols-1 md:grid-cols-11 gap-4 items-center bg-slate-950/80 p-5 rounded-2xl border border-slate-800">
         {/* Selector A */}
         <div className="md:col-span-5 space-y-1.5">
-          <label className="text-[11px] font-mono text-indigo-400 font-bold block uppercase">
+          <label htmlFor="compare-protocol-a" className="text-[11px] font-mono text-indigo-400 font-bold block uppercase">
             PROTOCOL A
           </label>
           <select
+            id="compare-protocol-a"
             value={slugA}
             onChange={(e) => {
               setSlugA(e.target.value);
@@ -93,20 +110,23 @@ export default function ComparisonView({ initialSlugA = 'tcp', initialSlugB = 'u
         {/* Swap Button */}
         <div className="md:col-span-1 flex justify-center pt-4 md:pt-0">
           <button
+            type="button"
             onClick={handleSwap}
             className="p-3 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 hover:border-slate-700 text-slate-300 transition-colors"
             title="Swap Protocols"
+            aria-label="Swap protocol A and B"
           >
-            <ArrowLeftRight className="w-4 h-4" />
+            <ArrowLeftRight className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>
 
         {/* Selector B */}
         <div className="md:col-span-5 space-y-1.5">
-          <label className="text-[11px] font-mono text-cyan-400 font-bold block uppercase">
+          <label htmlFor="compare-protocol-b" className="text-[11px] font-mono text-cyan-400 font-bold block uppercase">
             PROTOCOL B
           </label>
           <select
+            id="compare-protocol-b"
             value={slugB}
             onChange={(e) => {
               setSlugB(e.target.value);
@@ -122,6 +142,13 @@ export default function ComparisonView({ initialSlugA = 'tcp', initialSlugB = 'u
           </select>
         </div>
       </div>
+
+      {slugA === slugB && (
+        <div className="p-4 rounded-2xl bg-amber-950/30 border border-amber-500/30 text-xs text-amber-200 flex items-start gap-2">
+          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
+          <span>Both selectors point at the same protocol. Pick two different protocols to see a comparison.</span>
+        </div>
+      )}
 
       {/* Preset Verdict Banner */}
       {presetMatch && (
@@ -158,7 +185,7 @@ export default function ComparisonView({ initialSlugA = 'tcp', initialSlugB = 'u
               className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs flex items-center gap-1.5 transition-colors shadow-sm"
             >
               <Play className="w-3 h-3 fill-current" />
-              <span>Launch Sim</span>
+              <span>Open Protocol</span>
             </Link>
           </div>
 
@@ -177,7 +204,7 @@ export default function ComparisonView({ initialSlugA = 'tcp', initialSlugB = 'u
             </div>
             <div className="flex items-center justify-between p-2.5 rounded-lg bg-slate-950 border border-slate-800">
               <span className="text-slate-500">RFC STANDARD</span>
-              <span className="text-slate-300 truncate max-w-[200px]">{protocolA.rfc || 'IETF Standard'}</span>
+              <span className="text-slate-300 truncate max-w-[200px]">{protocolA.rfc || 'Not listed'}</span>
             </div>
             <div className="flex items-center justify-between p-2.5 rounded-lg bg-slate-950 border border-slate-800">
               <span className="text-slate-500">YEAR INTRODUCED</span>
@@ -238,7 +265,7 @@ export default function ComparisonView({ initialSlugA = 'tcp', initialSlugB = 'u
               className="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs flex items-center gap-1.5 transition-colors shadow-sm"
             >
               <Play className="w-3 h-3 fill-current" />
-              <span>Launch Sim</span>
+              <span>Open Protocol</span>
             </Link>
           </div>
 
@@ -257,7 +284,7 @@ export default function ComparisonView({ initialSlugA = 'tcp', initialSlugB = 'u
             </div>
             <div className="flex items-center justify-between p-2.5 rounded-lg bg-slate-950 border border-slate-800">
               <span className="text-slate-500">RFC STANDARD</span>
-              <span className="text-slate-300 truncate max-w-[200px]">{protocolB.rfc || 'IETF Standard'}</span>
+              <span className="text-slate-300 truncate max-w-[200px]">{protocolB.rfc || 'Not listed'}</span>
             </div>
             <div className="flex items-center justify-between p-2.5 rounded-lg bg-slate-950 border border-slate-800">
               <span className="text-slate-500">YEAR INTRODUCED</span>

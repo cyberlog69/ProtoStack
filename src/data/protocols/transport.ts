@@ -6,7 +6,7 @@ export const TRANSPORT_PROTOCOLS: Protocol[] = [
     slug: 'tcp',
     name: 'TCP',
     fullName: 'Transmission Control Protocol',
-    category: 'network',
+    category: 'transport',
     osiLayer: 'Transport',
     port: 'Variable',
     rfc: 'RFC 793, RFC 9293',
@@ -75,6 +75,22 @@ export const TRANSPORT_PROTOCOLS: Protocol[] = [
           summary: 'Seq=1001, Ack=5001, Flags=[ACK] -> ESTABLISHED',
           payload: { flags: 'ACK', seq: 1001, ack: 5001, state: 'ESTABLISHED' }
         }
+      },
+      {
+        step: 4,
+        title: 'Step 4: FIN / ACK Teardown',
+        description: 'Client finishes sending, transmits FIN (Seq=4001), and the server acknowledges it before closing its own direction.',
+        actorSource: 'client',
+        actorTarget: 'server',
+        explanation: 'Because TCP is full-duplex, each direction is closed independently, so a graceful close needs four segments (FIN, ACK, FIN, ACK) and the initiator waits in TIME_WAIT for 2xMSL to absorb stray retransmissions.',
+        packetInfo: {
+          id: 'tcp-pkt-4',
+          source: '192.168.1.50:54321',
+          destination: '93.184.216.34:80',
+          type: 'TCP [FIN, ACK]',
+          summary: 'Seq=4001, Ack=8001, Flags=[FIN, ACK] -> FIN_WAIT_1',
+          payload: { flags: 'FIN, ACK', seq: 4001, ack: 8001, state: 'FIN_WAIT_1', timeWait: '2xMSL' }
+        }
       }
     ],
     liveSandboxType: 'tcp-handshake',
@@ -85,6 +101,13 @@ export const TRANSPORT_PROTOCOLS: Protocol[] = [
         options: ['PING, PONG, ACK', 'SYN, SYN-ACK, ACK', 'HELLO, ACCEPT, READY', 'REQ, RES, ACK'],
         correctAnswer: 1,
         explanation: 'The 3-way handshake consists of SYN, SYN-ACK, and ACK.'
+      },
+      {
+        id: 'tcp-q2',
+        question: 'Which mechanism makes a TCP sender reduce its transmission rate after detecting packet loss?',
+        options: ['Sliding window scaling', 'Congestion control (CUBIC, Reno or BBR)', 'The checksum field', 'Sequence number randomisation'],
+        correctAnswer: 1,
+        explanation: 'TCP congestion control grows the congestion window while the path is clean and cuts it back when loss or delay signals congestion.'
       }
     ]
   },
@@ -93,7 +116,7 @@ export const TRANSPORT_PROTOCOLS: Protocol[] = [
     slug: 'udp',
     name: 'UDP',
     fullName: 'User Datagram Protocol',
-    category: 'network',
+    category: 'transport',
     osiLayer: 'Transport',
     port: 'Variable',
     rfc: 'RFC 768',
@@ -145,6 +168,22 @@ export const TRANSPORT_PROTOCOLS: Protocol[] = [
           summary: 'Tick 64 World Snapshot',
           payload: { tick: 64, playersCount: 16 }
         }
+      },
+      {
+        step: 3,
+        title: 'Receiver Verifies the Checksum',
+        description: 'Server recomputes the checksum over the IP pseudo-header plus datagram and compares it with the transmitted value.',
+        actorSource: 'gamer',
+        actorTarget: 'server',
+        explanation: 'A matching checksum means the datagram is handed to the application; a mismatch causes a silent discard with no retransmission, no ICMP error, and no notification to the sender.',
+        packetInfo: {
+          id: 'udp-pkt-3',
+          source: '192.168.1.10:27015',
+          destination: '104.28.16.5:27015',
+          type: 'UDP Datagram (checksum verified)',
+          summary: 'Checksum=0x8f2a, computed=0x8f2a -> ACCEPTED',
+          payload: { checksum: '0x8f2a', computed: '0x8f2a', pseudoHeader: 'src, dst, proto=17, udpLength', result: 'accepted' }
+        }
       }
     ],
     liveSandboxType: 'generic-simulator',
@@ -155,6 +194,13 @@ export const TRANSPORT_PROTOCOLS: Protocol[] = [
         options: ['4 bytes', '8 bytes', '20 bytes', '32 bytes'],
         correctAnswer: 1,
         explanation: 'The UDP header is exactly 8 bytes (4 fields of 2 bytes each: Source Port, Dest Port, Length, Checksum).'
+      },
+      {
+        id: 'udp-q2',
+        question: 'What happens when a received UDP datagram fails its checksum test?',
+        options: ['The receiver sends a NACK to trigger retransmission', 'The datagram is silently discarded', 'A TCP RST is returned to the sender', 'The receiver recalculates the checksum and forwards it'],
+        correctAnswer: 1,
+        explanation: 'UDP has no delivery guarantees, so a corrupt datagram is dropped silently and the application must detect the loss itself.'
       }
     ]
   },
@@ -163,7 +209,7 @@ export const TRANSPORT_PROTOCOLS: Protocol[] = [
     slug: 'quic',
     name: 'QUIC',
     fullName: 'Quick UDP Internet Connections',
-    category: 'cloud',
+    category: 'transport',
     osiLayer: 'Transport',
     port: '443 (over UDP)',
     rfc: 'RFC 9000',
@@ -215,6 +261,22 @@ export const TRANSPORT_PROTOCOLS: Protocol[] = [
           summary: 'Handshake Done | Stream ID 0, Stream ID 4 active',
           payload: { handshakeConfirmed: true, streams: [0, 4] }
         }
+      },
+      {
+        step: 3,
+        title: 'Connection Migration on Network Change',
+        description: 'The phone switches from Wi-Fi to 5G and keeps using the same Connection ID from a brand new source address.',
+        actorSource: 'phone',
+        actorTarget: 'edge',
+        explanation: 'QUIC identifies a connection by its Connection ID rather than the IP/port 4-tuple, so the edge validates the new path with PATH_CHALLENGE / PATH_RESPONSE and continues the same encrypted connection without a new handshake.',
+        packetInfo: {
+          id: 'quic-pkt-3',
+          source: 'Mobile Phone (5G: 172.16.44.9:51820)',
+          destination: 'Edge Server:443',
+          type: 'QUIC 1-RTT (PATH_CHALLENGE)',
+          summary: 'DCID=0x4a123bc4 | new source address | PATH_CHALLENGE=0x9c3f',
+          payload: { dcid: '0x4a123bc4', packetNumber: 1287, path: 'Wi-Fi -> 5G', pathChallenge: '0x9c3f71aa', pathResponse: 'pending' }
+        }
       }
     ],
     liveSandboxType: 'generic-simulator',
@@ -225,6 +287,13 @@ export const TRANSPORT_PROTOCOLS: Protocol[] = [
         options: ['TCP', 'UDP', 'SCTP', 'Raw Ethernet'],
         correctAnswer: 1,
         explanation: 'QUIC runs in user space on top of UDP to bypass legacy middlebox restrictions that only recognize TCP and UDP.'
+      },
+      {
+        id: 'quic-q2',
+        question: 'What does QUIC 0-RTT let a returning client do?',
+        options: ['Skip certificate validation entirely', 'Send application data in its first flight using cached TLS 1.3 resumption keys', 'Disable congestion control for the first megabyte', 'Reuse the previous connection ID without any new keys'],
+        correctAnswer: 1,
+        explanation: '0-RTT reuses a cached TLS 1.3 pre-shared key so early data can be sent immediately, at the cost that this early data is replayable by an attacker.'
       }
     ]
   },
@@ -233,7 +302,7 @@ export const TRANSPORT_PROTOCOLS: Protocol[] = [
     slug: 'sctp',
     name: 'SCTP',
     fullName: 'Stream Control Transmission Protocol',
-    category: 'network',
+    category: 'transport',
     osiLayer: 'Transport',
     port: 'Variable (Protocol 132)',
     rfc: 'RFC 9260',
@@ -285,6 +354,22 @@ export const TRANSPORT_PROTOCOLS: Protocol[] = [
           summary: 'State Cookie: 0x8a92... (Signed)',
           payload: { stateCookie: 'HMAC_SHA256(...)', expires: '60s' }
         }
+      },
+      {
+        step: 3,
+        title: 'COOKIE-ECHO Completes the Association',
+        description: 'Node A returns the state cookie verbatim; Node B verifies the HMAC, allocates the association, and answers with COOKIE-ACK.',
+        actorSource: 'ep1',
+        actorTarget: 'ep2',
+        explanation: 'Only after the echoed cookie proves the client actually owns its claimed addresses does Node B commit memory to the association; a bad HMAC is dropped silently and a stale cookie triggers an ERROR chunk with a Stale Cookie cause.',
+        packetInfo: {
+          id: 'sctp-pkt-3',
+          source: '10.1.1.1:3868',
+          destination: '10.2.1.1:3868',
+          type: 'SCTP COOKIE-ECHO',
+          summary: 'State Cookie echoed verbatim -> COOKIE-ACK, association ESTABLISHED',
+          payload: { stateCookie: '0x8a92...', hmacValid: true, reply: 'COOKIE-ACK', association: 'ESTABLISHED' }
+        }
       }
     ],
     liveSandboxType: 'generic-simulator',
@@ -300,6 +385,13 @@ export const TRANSPORT_PROTOCOLS: Protocol[] = [
         ],
         correctAnswer: 0,
         explanation: 'The server returns a signed State Cookie in the INIT-ACK and allocates zero local memory state until the client returns the cookie in COOKIE-ECHO.'
+      },
+      {
+        id: 'sctp-q2',
+        question: 'What does SCTP multi-homing provide for an association?',
+        options: ['Several IP addresses per endpoint with automatic path failover', 'Many TCP connections multiplexed onto a single port', 'Splitting one message across parallel streams for speed', 'A separate encryption key for every stream'],
+        correctAnswer: 0,
+        explanation: 'An SCTP association can bind multiple IP addresses at each end and uses heartbeat monitoring plus primary-path selection to fail over without re-establishing the association.'
       }
     ]
   }

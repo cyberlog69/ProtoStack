@@ -1,177 +1,196 @@
-# 🌐 ProtoStack — Interactive Protocols Learning Platform
+# ProtoStack — Interactive Protocols Learning Platform
 
-[![Next.js](https://img.shields.io/badge/Next.js-14%2F16-black?style=flat-square&logo=next.js)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38bdf8?style=flat-square&logo=tailwindcss)](https://tailwindcss.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](./LICENSE)
 
-**ProtoStack** is an open-source, interactive web platform designed for software engineers, network architects, security researchers, and students to explore, visualize, and interactively test computer networking, internet, and IoT protocols.
+**ProtoStack** is an open-source learning platform for computer networking, internet, and IoT protocols. It combines a 52-protocol catalog with step-by-step packet-flow models, OSI/TCP-IP layer views, side-by-side comparisons, quizzes, and sandboxes that are explicitly labelled **live** or **simulated**.
 
-🔗 **GitHub Repository**: [https://github.com/cyberlog69/ProtoStack](https://github.com/cyberlog69/ProtoStack)
-
----
-
-## 🌟 Key Features
-
-### 1. 📚 Comprehensive Protocol Encyclopedia (52+ Protocols)
-Covers all foundational and modern protocols across 6 dedicated categories:
-- **Network & Internet**: DNS, IPv4, IPv6, ICMP, ARP, DHCP, BGP, OSPF, NTP
-- **Transport Layer**: TCP, UDP, QUIC, SCTP
-- **Application & Web**: HTTP/HTTPS, WebSocket, SSH, gRPC, SNMP, SMTP, FTP, SFTP, IMAP, POP3, LDAP, Telnet
-- **Internet of Things (IoT) & Industrial**: MQTT, CoAP, Zigbee, LoRaWAN, Matter, Modbus TCP, OPC-UA, BLE, Z-Wave, CAN Bus, BACnet
-- **Security & Identity**: TLS 1.3, IPsec, WireGuard, OAuth 2.0 with PKCE, Kerberos, SAML 2.0
-- **Wireless & Radio**: Wi-Fi (802.11), NFC, 5G NR, Ethernet (802.3)
-- **Cloud & Event Streaming**: AMQP, Apache Kafka, Redis RESP, WebRTC, NATS, STOMP
-
-### 2. 🎬 Framer-Motion Animated Packet Flow Simulator
-- Real-time in-flight packet propagation with dynamic SVG wire and pulse glows.
-- Traveling packet capsules displaying real-time progress (0–100%).
-- Speed controls (0.5x, 1x, 2x), auto-play, pause, step rewind/forward, and keyboard shortcuts (`Space`, `←`, `→`).
-- **4-Tab Deep Inspection Panel**:
-  - **Flow Explanation**: Human-readable narrative of each protocol state transition.
-  - **Wireshark Packet Inspector**: Dissected protocol fields, headers, and payload structures.
-  - **Hex Stream View**: Formatted binary hexadecimal octets with ASCII sidebar.
-  - **Code Implementation**: Ready-to-use client/server snippets in Node.js, Python, or Go.
-
-### 3. 🧪 Live Browser & Backend Sandboxes
-- 🌐 **DNS Resolver** (`DnsSandbox`): Real DNS over HTTPS (DoH) lookups with millisecond latency, TTL, and record type parsing (A, AAAA, MX, TXT, CNAME) via Cloudflare & Google DNS with internal fallback API route (`/api/dns`).
-- ⚡ **MQTT IoT Broker** (`MqttSandbox`): Virtual ESP32 sensor simulation, adjustable QoS tiers (0, 1, 2), topic publisher, and real-time wire listener.
-- 💻 **TCP 3-Way Handshake** (`TcpSandbox`): Interactive step sequencer calculating client/server Sequence and Acknowledgement numbers across SYN, SYN-ACK, and ACK states.
-- 🌍 **HTTP/HTTPS Client Bench** (`HttpSandbox`): Live request tester wired to `/api/http-test` measuring round-trip latency, status codes, and response headers.
-- 🔌 **WebSocket Duplex Terminal** (`WebSocketSandbox`): Full-duplex bidirectional terminal connected to live echo sockets with frame opcode inspector, ping/pong heartbeats, and local fallback simulator.
-- 🎛️ **Generic Wire Simulator** (`GenericSandbox`): Universal step runner with live packet payloads and custom parameters for all other protocols.
-
-### 4. 🧱 Interactive OSI 7-Layer & TCP/IP Model (`/layers`)
-- Complete side-by-side comparison of the ISO/OSI 7-Layer model and TCP/IP 4-Layer stack.
-- **Dynamic Packet Encapsulation & Decapsulation Simulator**: Enter any custom payload string and watch it get wrapped with L7 HTTP headers, L4 TCP segments, L3 IP packets, and L2 Ethernet frames with CRC checksums, then decapsulated back.
-
-### 5. ⚖️ Protocol Comparison Engine (`/compare`)
-- Side-by-side spec and feature comparison matrix:
-  - TCP vs. UDP
-  - MQTT vs. CoAP
-  - IPv4 vs. IPv6
-  - FTP vs. SFTP
-  - IMAP vs. POP3
-  - WebRTC vs. WebSocket
-  - Z-Wave vs. Zigbee
-  - BGP vs. OSPF
-  - Wi-Fi vs. Ethernet
-  - gRPC vs. HTTP/REST
-- Custom URL routing: `/compare/[protocolA]/[protocolB]`.
-
-### 6. 🏆 Knowledge Arena & Quiz Engine (`/quiz`)
-- Multi-question challenge arena with category filtering.
-- Instant scoring, answer explanations, and celebratory particle confetti.
-
-### 7. 📊 User Mastery & Bookmarks Dashboard (`/dashboard`)
-- Local storage persistent progress tracking ("Mark as Learned" & "Bookmark").
-- Curated Learning Paths:
-  - Web & API Foundations
-  - IoT & Smart Home Masterclass
-  - Core Internet & Routing
-  - Security, Identity & VPN
-
-### 8. 🔍 Global Spotlight Search (`⌘K` / `Ctrl+K`)
-- Instant keyboard command palette searching by protocol name, abbreviation, port number, RFC, OSI layer, and category.
+Repository: [https://github.com/cyberlog69/ProtoStack](https://github.com/cyberlog69/ProtoStack)
 
 ---
 
-## 🚀 Getting Started
+## What is real, and what is simulated
+
+Honesty is a design constraint here. Every sandbox states which mode it is in.
+
+| Feature | Mode | Notes |
+| :--- | :--- | :--- |
+| DNS resolver | Real, server-side | `/api/dns` uses Node's DNS APIs with a 4 s timeout and rate limiting. TTLs and AD flags are reported only when the resolver exposes them. |
+| HTTP request bench | Real | Defaults to the local `/api/http-demo` echo route. External URLs go through `/api/http-test`, which enforces an allowlist, timeouts, redirect re-validation, and a 64 KB response cap. |
+| MQTT pub/sub | Simulated in the browser | Implements `+`/`#` topic matching, per-subscriber delivery, and retained messages. No broker connection is opened. |
+| TCP handshake | Simulated | Random per-session ISNs and real TCP state transitions; not captured packets. |
+| WebSocket terminal | Simulated by default | Optional live `wss://echo.websocket.events` connection. Errors are surfaced, never converted into a fake success. |
+| Encapsulation / packet flow | Simulated | Header labels are illustrative; hex dumps, bit strings, and CRC-32 values are computed from the current payload. |
+| Other protocols | Simulated step runner | Replays the stored interaction steps. No network traffic. |
+| Progress, bookmarks, quiz scores | Local only | Stored in `localStorage`; nothing is uploaded. |
+
+---
+
+## Features
+
+### Protocol catalog (52 protocols)
+
+- **Network & Internet** — DNS, IPv4, IPv6, ICMP, ARP, DHCP, BGP, OSPF, NTP, and more
+- **Transport Layer** — TCP, UDP, QUIC, SCTP
+- **Application & Web** — HTTP/HTTPS, WebSocket, SSH, gRPC, SNMP, SMTP, FTP, SFTP, IMAP, POP3, LDAP, Telnet
+- **Internet of Things & Industrial** — MQTT, CoAP, Zigbee, LoRaWAN, Matter, Modbus TCP, OPC-UA, BLE, Z-Wave, CAN Bus, BACnet
+- **Security & Identity** — TLS 1.3, IPsec, WireGuard, OAuth 2.0 with PKCE, Kerberos, SAML 2.0
+- **Wireless & Radio** — Wi-Fi (802.11), NFC, 5G NR, Ethernet (802.3)
+- **Cloud & Event Streaming** — AMQP, Apache Kafka, Redis RESP, WebRTC, NATS, STOMP
+
+Category counts are derived from the data at build time, so they cannot drift from the catalog. Each protocol ships with at least three interaction steps and two quiz questions, and the data tests enforce those floors.
+
+### Animated packet flow
+
+- Framer Motion packet propagation with speed controls (0.5×, 1×, 2×), play/pause, replay, and step navigation.
+- Keyboard support: `Space`, `←`, `→` (ignored while typing or focused on a control).
+- `prefers-reduced-motion` is respected globally and inside the animation.
+- Inspector tabs: flow explanation, decoded packet fields, a hex dump generated from the current step payload (with CRC-32), and an optional raw code snippet.
+
+### OSI and TCP/IP layers (`/layers`)
+
+- Side-by-side OSI 7-layer and TCP/IP 4-layer reference.
+- Encapsulation and decapsulation walkthrough with computed hex, bit strings, and CRC-32 from your custom payload.
+- Layer-by-layer protocol links.
+
+### Protocol comparisons (`/compare`)
+
+- Preset matchups plus any pair of protocols via `/compare/[a]/[b]`.
+- Unknown slugs return a 404 instead of silently falling back.
+- A notice appears when both selectors point at the same protocol.
+
+### Quizzes (`/quiz`)
+
+- Category filters, 10 / 25 / all question limits, and seeded shuffling for stable retries.
+- Best score per protocol or category is stored locally.
+
+### Dashboard (`/dashboard`)
+
+- Overall mastery, quiz average, saved quiz results, bookmarks, and curated learning paths.
+- Fully local; the dashboard is excluded from search indexing.
+
+### Search (`Ctrl+K` / `⌘K`)
+
+- Lazy-loaded dialog searching names, abbreviations, ports, RFCs, layers, features, and use cases.
+- Focus trap, Escape to close, focus restoration, and body scroll lock.
+
+---
+
+## Getting started
 
 ### Prerequisites
-- Node.js 18+ (tested on Node.js 20 & 26)
+
+- Node.js **20.9 or newer** (Next.js 16 requirement)
 - npm
 
-### Installation & Setup
+### Install and run
 
 ```bash
-# Clone the repository
 git clone https://github.com/cyberlog69/ProtoStack.git
 cd ProtoStack
-
-# Install dependencies
 npm install
-
-# Start development server
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:3000](http://localhost:3000).
 
-### Production Build
+### Production build
 
 ```bash
-# Build production bundle
 npm run build
-
-# Start production server
 npm run start
 ```
 
+### Environment variables
+
+| Variable | Required | Purpose |
+| :--- | :---: | :--- |
+| `NEXT_PUBLIC_SITE_URL` | No | Canonical site origin used for metadata, sitemap, and robots. Defaults to `http://localhost:3000`. Set this to your public HTTPS origin in production. |
+| `HTTP_TEST_ALLOWED_HOSTS` | No | Comma-separated allowlist for `/api/http-test`. Defaults to `example.com,www.example.com,httpbin.org,jsonplaceholder.typicode.com`. |
+
+### Quality commands
+
+```bash
+npm run typecheck   # tsc --noEmit
+npm run lint        # eslint .
+npm run test        # node test runner via tsx
+npm run check       # typecheck + lint + test
+npm run ingest      # audit real protocol counts and data structure
+```
+
+CI runs typecheck, lint, tests, and a production build on Node 20.9 and Node 22.
+
 ---
 
-## 📁 Repository Structure
+## Repository structure
 
-```
+```text
 ProtoStack/
+├── .github/
+│   ├── workflows/ci.yml                  # typecheck, lint, test, build
+│   ├── workflows/codeql.yml              # CodeQL JavaScript/TypeScript analysis
+│   └── dependabot.yml                    # npm and Actions updates
+├── scripts/
+│   └── ingest-protocols.mjs              # data audit (real counts, no scraping)
 ├── src/
 │   ├── app/
 │   │   ├── api/
-│   │   │   ├── dns/route.ts              # Live DNS DoH proxy route
-│   │   │   └── http-test/route.ts        # HTTP benchmark & latency test endpoint
+│   │   │   ├── dns/route.ts              # validated server-side DNS resolver
+│   │   │   ├── http-demo/route.ts        # local same-origin echo endpoint
+│   │   │   └── http-test/route.ts        # allowlisted outbound HTTP proxy
 │   │   ├── compare/
-│   │   │   ├── page.tsx                  # Protocol comparison index & preset selector
-│   │   │   └── [a]/[b]/page.tsx          # Dynamic side-by-side protocol comparison
-│   │   ├── dashboard/page.tsx            # Mastery tracker, bookmarks & learning paths
-│   │   ├── layers/page.tsx               # OSI 7-Layer & TCP/IP encapsulation simulator
-│   │   ├── protocols/[slug]/page.tsx     # 4-panel interactive protocol session
-│   │   ├── quiz/page.tsx                 # Interactive multi-question protocol quiz
-│   │   ├── layout.tsx                    # Root layout with ProgressProvider & Navbar
-│   │   ├── page.tsx                      # Home page with protocol directory & filters
-│   │   └── globals.css                   # Custom styles, wire glows & scrollbar styling
+│   │   │   ├── page.tsx                  # comparison index
+│   │   │   └── [a]/[b]/page.tsx          # validated, statically generated comparisons
+│   │   ├── dashboard/                    # local progress dashboard (+ noindex metadata)
+│   │   ├── layers/                       # OSI/TCP-IP page and encapsulation simulator
+│   │   ├── protocols/[slug]/page.tsx     # statically generated protocol pages
+│   │   ├── quiz/                         # quiz arena
+│   │   ├── layout.tsx                    # metadata, skip link, MotionProvider
+│   │   ├── page.tsx                      # home catalog and filters
+│   │   ├── robots.ts                     # robots.txt
+│   │   ├── sitemap.ts                    # sitemap.xml
+│   │   └── globals.css                   # focus styles, reduced motion, scrollbars
 │   ├── components/
-│   │   ├── Navbar.tsx                    # Header with Spotlight trigger & route links
-│   │   ├── Footer.tsx                    # Footer with category links
-│   │   ├── SearchModal.tsx               # Global Spotlight Command Palette (⌘K)
-│   │   ├── ProtocolCard.tsx              # Protocol card with learned & bookmark indicators
-│   │   ├── InteractiveVisualizer.tsx     # Framer-Motion packet flow simulator
-│   │   ├── EncapsulationSimulator.tsx    # L7->L1 encapsulation/decapsulation interactive widget
-│   │   ├── ComparisonView.tsx            # Comparison table & spec differential visualizer
-│   │   ├── QuizSection.tsx               # Per-protocol quiz component
-│   │   └── sandboxes/
-│   │       ├── DnsSandbox.tsx            # Live DNS DoH query runner
-│   │       ├── MqttSandbox.tsx           # Live MQTT virtual broker & subscriber
-│   │       ├── TcpSandbox.tsx            # Interactive TCP 3-way handshake sequencer
-│   │       ├── HttpSandbox.tsx           # Live HTTP client & latency bench
-│   │       ├── WebSocketSandbox.tsx      # Live full-duplex WebSocket terminal
-│   │       └── GenericSandbox.tsx        # Universal step runner with live packet payloads
-│   ├── context/
-│   │   └── ProgressContext.tsx           # React Context tracking learned items, bookmarks & scores
+│   │   ├── ProtocolDetail.tsx            # client shell for a protocol page
+│   │   ├── InteractiveVisualizer.tsx     # packet-flow animation and inspector
+│   │   ├── EncapsulationSimulator.tsx    # L7→L1 model with computed payload output
+│   │   ├── ComparisonView.tsx            # side-by-side comparison
+│   │   ├── QuizSection.tsx               # per-protocol quiz
+│   │   ├── SearchModal.tsx               # Ctrl+K dialog
+│   │   └── sandboxes/                    # DNS, HTTP, MQTT, TCP, WebSocket, generic
+│   ├── context/ProgressContext.tsx       # typed localStorage progress state
 │   ├── data/
-│   │   ├── comparisons.ts                # Comparison presets & differential matrices
-│   │   ├── protocols.ts                  # Main aggregator catalog
-│   │   └── protocols/                    # Modular protocol datasets (52+ protocols)
-│   │       ├── network.ts
-│   │       ├── transport.ts
-│   │       ├── application.ts
-│   │       ├── iot.ts
-│   │       ├── security.ts
-│   │       ├── wireless.ts
-│   │       └── cloud.ts
+│   │   ├── comparisons.ts
+│   │   ├── layers.ts
+│   │   ├── protocols.ts                  # aggregator and category metadata
+│   │   └── protocols/                    # seven data files, 52 protocols
 │   ├── lib/
-│   │   └── utils.ts                      # Styling helpers & color tokens
-│   └── types/
-│       └── protocol.ts                   # Protocol, Step, Packet, and Quiz interfaces
-├── scripts/
-│   └── ingest-protocols.mjs              # Extensible scraper & protocol ingestion utility
+│   │   ├── hex.ts                        # CRC-32, hex dump, bit string
+│   │   ├── rate-limit.ts                 # in-memory fixed-window limiter
+│   │   ├── site.ts                       # canonical URL helpers
+│   │   ├── url-safety.ts                 # outbound URL and DNS validation
+│   │   └── utils.ts                      # styling helpers
+│   └── types/protocol.ts                 # protocol, step, packet, quiz types
+├── tests/
+│   ├── data.test.ts                      # catalog integrity
+│   └── url-safety.test.ts                # SSRF-oriented URL validation
+├── eslint.config.mjs
+├── next.config.mjs                       # security headers and CSP
 ├── tailwind.config.ts
 ├── tsconfig.json
-├── package.json
+├── SECURITY.md
+├── LICENSE
 └── README.md
 ```
 
 ---
 
-## 📄 License
+## Security
 
-This project is licensed under the MIT License — see the LICENSE file for details.
+See [SECURITY.md](./SECURITY.md) for the implemented controls, honest limitations (including the per-process rate limiter and DNS rebinding caveat), and the private disclosure process.
+
+## License
+
+MIT — see [LICENSE](./LICENSE).

@@ -1,79 +1,107 @@
-# 🛡️ Security Policy
+# Security Policy
 
-ProtoStack is committed to maintaining a secure, safe, and reliable environment for developers, network engineers, educators, and students exploring computer networking and IoT protocols.
-
-This security policy outlines our supported versions, built-in defensive architecture, reporting guidelines, and vulnerability disclosure process.
+ProtoStack is a learning project. Its API routes are deliberately small and defensive, but they are not a hardened production proxy. This document describes what is actually implemented so operators can deploy it with the right expectations.
 
 ---
 
-## 📦 Supported Versions
-
-Security patches and bug fixes are actively provided for the following versions:
+## Supported Versions
 
 | Version / Branch | Supported | Notes |
 | :--- | :---: | :--- |
-| `main` (Latest) | ✅ | Actively maintained with continuous integration |
-| `v0.1.x` | ✅ | Current release track |
-| `< 0.1.0` | ❌ | Deprecated early pre-release builds |
+| `main` (latest) | Yes | Actively maintained with CI |
+| `v0.1.x` | Yes | Current release track |
+| `< 0.1.0` | No | Deprecated pre-release builds |
 
 ---
 
-## 🔒 Security Architecture & Defensive Controls
+## Implemented Defensive Controls
 
-Because ProtoStack features live network probes, protocol testers, and real-time simulators, we enforce strict defensive controls across all layers:
+### Outbound HTTP proxy — `/api/http-test`
 
-### 1. Server-Side Request Forgery (SSRF) Prevention
-All server-side proxy routes (such as `/api/http-test` and `/api/dns`) implement rigorous destination validation:
-- **Private & Reserved IP Blocking**: Requests targeting RFC 1918 private subnets (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`), loopback addresses (`127.0.0.0/8`, `::1`), link-local IPs (`169.254.0.0/16`, `fe80::/10`), and multicast addresses are rejected immediately.
-- **Cloud Metadata Protection**: Direct requests to cloud provider instance metadata services (e.g., `169.254.169.254`) are explicitly blocked.
-- **Protocol Scheme Restrictions**: Outbound network tests are constrained strictly to standard `http:` and `https:` schemes.
-- **Timeout & Payload Caps**: Outbound requests enforce rigid execution timeouts (max 5000ms) and response byte limits to prevent resource exhaustion and denial of service.
+Used only when the browser requests an external URL from the HTTP sandbox.
 
-### 2. Client-Side Sandbox Isolation
-- Interactive simulators (such as the MQTT broker, WebSocket terminal, and DNS DoH client) execute inside the user's isolated browser environment.
-- No sensitive user credentials, tokens, or personal identifiers are stored or transmitted.
-- Progress metrics, bookmarked protocols, and quiz scores are kept strictly in local browser storage (`localStorage`).
+- **Host allowlist.** Defaults to `example.com`, `www.example.com`, `httpbin.org`, and `jsonplaceholder.typicode.com`. Override with the comma-separated `HTTP_TEST_ALLOWED_HOSTS` environment variable. Hosts outside the list are rejected before DNS lookup.
+- **Scheme and port allowlist.** Only `http:` and `https:` are accepted, and only ports `80` and `443` (or the scheme default).
+- **Private and reserved address blocking.** Rejects loopback, RFC 1918, CGNAT, link-local, multicast, documentation, benchmarking, IPv4-mapped IPv6, and cloud metadata ranges. Both literal IPs and encoded IPv4 forms (`2130706433`, `0x7f000001`, octal) are checked.
+- **DNS resolution checks.** Resolved addresses are validated, not just the hostname. DNS rebinding is still theoretically possible between validation and connection; this is a known limitation of application-level checks.
+- **Credentials and fragments.** URLs containing `user:pass@` or URL credentials are rejected; fragments are dropped.
+- **Method allowlist.** `GET`, `HEAD`, `POST`, `PUT`, `PATCH`, and `DELETE` only.
+- **Header filtering.** `host`, `content-length`, `connection`, `transfer-encoding`, `upgrade`, `keep-alive`, `te`, `trailer`, `proxy-connection`, `cookie`, `authorization`, and `proxy-authorization` cannot be set by the caller. Header values are capped at 1 KB.
+- **Body cap.** Request bodies are limited to 16 KB.
+- **Timeout.** Each outbound request has a 5-second timeout.
+- **Response cap.** Response bodies are streamed and truncated at 64 KB.
+- **Redirect handling.** At most three redirects. Every redirect target is re-validated against the allowlist and address rules. Writes (`POST`, `PUT`, `PATCH`, `DELETE`) are not followed to a new origin.
+- **Rate limit.** 12 requests per minute per client IP. The limiter is an in-memory fixed window and is **per server process**: on serverless or multi-instance deployments each warm instance keeps its own counter. Use a shared store (Redis, etc.) if you need a global limit.
+- **Client identity caveat.** The limiter keys on `X-Forwarded-For` / `X-Real-IP`. Those headers are trustworthy only behind a proxy that overwrites them; if the app is exposed directly, a caller can spoof them to bypass the limit.
 
-### 3. Dependency & Supply Chain Security
-- Automated dependency scanning and patch updates via GitHub Dependabot.
-- Regular static application security testing (SAST) and CodeQL code scanning for early detection of CWE vulnerabilities.
+### DNS resolver — `/api/dns`
+
+- Hostname grammar validation, 253-character cap, and rejection of local/special-use suffixes (`.local`, `.internal`, `.lan`, `.home`, `.corp`, `.arpa`).
+- Record-type allowlist: `A`, `AAAA`, `MX`, `TXT`, `CNAME`, `NS`.
+- 4-second query timeout.
+- Rate limit: 30 requests per minute per client IP, with the same per-process caveat.
+- Client IPs are read from `X-Forwarded-For` / `X-Real-IP`; only trust those headers behind a proxy that sets them.
+- Answers and TTLs come from Node's resolver. When a record type does not expose a TTL, the UI says "not exposed" rather than inventing one.
+- The local resolver does not validate DNSSEC, so the API reports `ADVerified: false` instead of asserting that a zone is unsigned.
+
+### Local echo route — `/api/http-demo`
+
+- Same-origin route intended for the default HTTP sandbox experiment.
+- Supports `GET`, `HEAD`, `POST`, `PUT`, `PATCH`, and `DELETE`.
+- Request bodies are capped at 16 KB.
+- `cookie`, `authorization`, and `proxy-authorization` request headers are not echoed back.
+
+### Browser-side simulations
+
+- MQTT topic matching, retained messages, the TCP state machine, the generic step runner, and the simulated WebSocket session run entirely in the browser. They do not open broker or socket connections, and the UI labels them as simulated.
+- The WebSocket sandbox can optionally open a real connection to `wss://echo.websocket.events`. Errors are surfaced instead of being reported as a successful connection.
+- Progress, quiz results, and bookmarks are stored in `localStorage` and are never uploaded.
+
+### HTTP response headers
+
+`next.config.mjs` sets:
+
+- Content-Security-Policy (app origin; `wss://echo.websocket.events` for the optional live WebSocket; Next requires inline bootstrap scripts)
+- `X-Content-Type-Options: nosniff`
+- `X-Frame-Options: DENY` and `frame-ancestors 'none'`
+- `Referrer-Policy: strict-origin-when-cross-origin`
+- `Permissions-Policy` denying camera, microphone, geolocation, and payment
+- `Cross-Origin-Opener-Policy: same-origin`
+- `Strict-Transport-Security` (effective only when served over HTTPS)
+
+### Dependency and supply-chain checks
+
+- GitHub Dependabot for npm and GitHub Actions updates.
+- CodeQL analysis for JavaScript and TypeScript.
+- `npm run check` (typecheck, lint, tests) runs in CI for every push and pull request.
 
 ---
 
-## 🚨 Reporting a Vulnerability
+## Reporting a Vulnerability
 
-We treat all security issues with the utmost urgency. If you discover a vulnerability or potential security risk in ProtoStack, **please do not open a public issue.**
+Please do **not** open a public issue for a security problem.
 
-### Preferred Reporting Method
-Please report vulnerabilities privately via GitHub's Security Advisory system:
-👉 **[Report a Security Vulnerability via GitHub Advisories](https://github.com/cyberlog69/ProtoStack/security/advisories/new)**
+Use GitHub Security Advisories:
 
-### Alternative Method
-If you are unable to use GitHub Security Advisories, you can contact the repository maintainer directly via GitHub profile details.
+**[Report a security vulnerability](https://github.com/cyberlog69/ProtoStack/security/advisories/new)**
 
-### What to Include in Your Report
-To help us investigate and resolve the issue quickly, please provide:
-1. **Summary**: A clear description of the vulnerability and its potential impact.
-2. **Steps to Reproduce**: Detailed reproduction steps or a minimal Proof of Concept (PoC).
-3. **Affected Endpoints / Files**: Specific URLs, components, or API routes involved.
-4. **Environment**: Node.js version, browser, operating system, and commit hash.
-5. **Mitigation Suggestions** (optional): Any suggested code fix or defensive control.
+Include:
 
----
+1. A summary of the issue and its impact.
+2. Reproduction steps or a minimal proof of concept.
+3. Affected endpoints, routes, or files.
+4. Node.js version, browser, OS, and commit hash.
+5. Optional mitigation suggestions.
 
-## ⏱️ Response Timelines & SLA
+### Response expectations
 
-When you submit a vulnerability report:
-* **Initial Acknowledgment**: Within **48 hours** of receiving your report.
-* **Triage & Assessment**: Within **3 to 5 business days**, confirming reproduction and assigning a severity rating (CVSS).
-* **Patch & Fix**: We strive to develop, verify, and merge a remediation patch within **7 to 14 business days**.
-* **Coordinated Disclosure**: Once a fix is verified and deployed, a public security advisory will be published crediting the reporter (unless anonymity is requested).
+- Initial acknowledgment: within 48 hours.
+- Triage and severity assessment: within 3–5 business days.
+- Remediation target: 7–14 business days, depending on complexity.
+- Coordinated disclosure after a fix is verified and deployed.
 
 ---
 
-## 🤝 Safe Harbor & Ethical Research
+## Safe Harbor
 
-We support responsible security research. We will not take legal action or file complaints against researchers who:
-* Conduct research in good faith without attempting to disrupt live services or degrade performance.
-* Avoid accessing, modifying, or destroying unauthorized user data.
-* Allow reasonable time for remediation before publicly disclosing technical vulnerability details.
+We support good-faith research. We will not pursue legal action against researchers who avoid disrupting live services, do not access or modify other users' data, and give reasonable time for remediation before public disclosure.

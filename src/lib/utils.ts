@@ -30,6 +30,8 @@ export function getCategoryBadge(category: string): { label: string; color: stri
   switch (category) {
     case 'network':
       return { label: 'Network & Core', color: 'bg-blue-500/15 text-blue-300 border-blue-500/30' };
+    case 'transport':
+      return { label: 'Transport Layer', color: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30' };
     case 'application':
       return { label: 'Application Layer', color: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' };
     case 'iot':

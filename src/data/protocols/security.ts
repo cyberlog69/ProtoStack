@@ -58,6 +58,22 @@ export const SECURITY_PROTOCOLS: Protocol[] = [
           summary: 'Handshake complete in 1-RTT. Symmetric key derived.',
           payload: { cipherChosen: 'TLS_AES_256_GCM_SHA384', certificateVerified: true }
         }
+      },
+      {
+        step: 3,
+        title: 'Client Finished & Encrypted Application Data',
+        description: 'Client verifies the server Finished, sends its own Finished record, and immediately transmits the first encrypted HTTP request.',
+        actorSource: 'client',
+        actorTarget: 'server',
+        explanation: 'Once both Finished messages verify the handshake transcript, every following record is protected with AEAD (TLS_AES_256_GCM_SHA384).',
+        packetInfo: {
+          id: 'tls-pkt-3',
+          source: 'Client',
+          destination: 'Server:443',
+          type: 'Finished, Application Data',
+          summary: 'Finished (transcript HMAC) | GET / HTTP/2 encrypted',
+          payload: { verifyData: '0x7c1e9b...', recordType: 'application_data', innerPlaintext: 'GET / HTTP/2' }
+        }
       }
     ],
     liveSandboxType: 'generic-simulator',
@@ -68,6 +84,13 @@ export const SECURITY_PROTOCOLS: Protocol[] = [
         options: ['1-RTT', '2-RTT', '3-RTT', '0-RTT only'],
         correctAnswer: 0,
         explanation: 'TLS 1.3 reduced the standard handshake from 2-RTT to 1-RTT by including the client key share in ClientHello.'
+      },
+      {
+        id: 'tls-q2',
+        question: 'Which property does TLS 1.3 enforce by requiring ephemeral Diffie-Hellman key exchange on every full handshake?',
+        options: ['Perfect forward secrecy', 'Payload compression', 'Certificate revocation lookup', 'IPv6 dual-stack support'],
+        correctAnswer: 0,
+        explanation: 'TLS 1.3 removed static RSA key exchange, so each session uses ephemeral keys that are discarded and past traffic stays safe if a long-term key is later compromised.'
       }
     ]
   },
@@ -128,6 +151,22 @@ export const SECURITY_PROTOCOLS: Protocol[] = [
           summary: 'SPI: 0x8a92bc01, Seq: 1042, Encrypted Payload: 1420 bytes',
           payload: { spi: '0x8a92bc01', sequenceNumber: 1042, encryptedPayloadLength: 1420 }
         }
+      },
+      {
+        step: 3,
+        title: 'NAT Traversal Encapsulation on UDP 4500',
+        description: 'After both gateways detect a NAT device between them, IKEv2 and ESP traffic floats to UDP port 4500 with a non-ESP marker.',
+        actorSource: 'branch',
+        actorTarget: 'hq',
+        explanation: 'NAT cannot translate bare ESP (IP protocol 50) while keeping the mapping, so the encrypted packets are wrapped inside UDP and the 4-byte non-ESP marker separates IKE from ESP.',
+        packetInfo: {
+          id: 'ipsec-pkt-3',
+          source: '198.51.100.1:4500',
+          destination: '203.0.113.1:4500',
+          type: 'IKEv2 (NAT-T)',
+          summary: 'NAT detected -> float to UDP 4500 | non-ESP marker 0x00000000',
+          payload: { nonEspMarker: '0x00000000', udpPort: 4500, natDetected: true }
+        }
       }
     ],
     liveSandboxType: 'generic-simulator',
@@ -138,6 +177,13 @@ export const SECURITY_PROTOCOLS: Protocol[] = [
         options: ['Transport Mode', 'Tunnel Mode', 'Bridge Mode', 'Pass-Through Mode'],
         correctAnswer: 1,
         explanation: 'In Tunnel Mode, the entire original IP packet is encrypted and placed inside a new outer IP packet, which is standard for site-to-site VPNs.'
+      },
+      {
+        id: 'ipsec-q2',
+        question: 'Which IP protocol number identifies the Encapsulating Security Payload (ESP) header?',
+        options: ['Protocol 6 (TCP)', 'Protocol 17 (UDP)', 'Protocol 50 (ESP)', 'Protocol 51 (AH)'],
+        correctAnswer: 2,
+        explanation: 'ESP is carried directly inside IP using protocol number 50, while the Authentication Header (AH) uses protocol number 51.'
       }
     ]
   },
@@ -198,6 +244,22 @@ export const SECURITY_PROTOCOLS: Protocol[] = [
           summary: 'Type: 2, ReceiverIndex: 0x14a8, Handshake Done',
           payload: { messageType: 2, receiverIndex: '0x14a8', sessionKeyDerived: true }
         }
+      },
+      {
+        step: 3,
+        title: 'Keepalive and Endpoint Roaming',
+        description: 'Gateway sends a 32-byte empty transport-data packet as a keepalive, and packets from a new client address update the peer endpoint automatically.',
+        actorSource: 'vpn',
+        actorTarget: 'laptop',
+        explanation: 'The encrypted keepalive preserves NAT and firewall mappings, while the peer is re-identified by its public key so a changed source IP never triggers a new handshake.',
+        packetInfo: {
+          id: 'wg-pkt-3',
+          source: '203.0.113.5:51820',
+          destination: '192.168.1.10:51820',
+          type: 'WireGuard Transport Data (Keepalive)',
+          summary: 'Type: 4, ReceiverIndex: 0x21c7, Length: 32 bytes (empty payload)',
+          payload: { messageType: 4, receiverIndex: '0x21c7', encryptedPayloadLength: 0 }
+        }
       }
     ],
     liveSandboxType: 'generic-simulator',
@@ -208,6 +270,13 @@ export const SECURITY_PROTOCOLS: Protocol[] = [
         options: ['Triple DES (3DES)', 'ChaCha20-Poly1305', 'RC4', 'Blowfish'],
         correctAnswer: 1,
         explanation: 'WireGuard uses modern ChaCha20 for symmetric encryption and Poly1305 for authentication tag verification.'
+      },
+      {
+        id: 'wg-q2',
+        question: 'Which handshake framework does WireGuard build its 1-RTT key exchange on?',
+        options: ['TLS 1.3', 'IKEv2', 'Noise Protocol Framework (Noise_IKpsk2)', 'SSHv2 transport layer'],
+        correctAnswer: 2,
+        explanation: 'WireGuard implements the Noise_IKpsk2 pattern, which yields a compact 1-RTT handshake with identity hiding and forward secrecy.'
       }
     ]
   },
@@ -269,6 +338,22 @@ export const SECURITY_PROTOCOLS: Protocol[] = [
           summary: 'grant_type=authorization_code, code=splat9812',
           payload: { access_token: 'eyJhbGciOi...', token_type: 'Bearer', expires_in: 3600 }
         }
+      },
+      {
+        step: 3,
+        title: 'Bearer Token Call to the Resource Server',
+        description: 'Client presents the access token in the Authorization header and receives only the data permitted by the granted scope.',
+        actorSource: 'user',
+        actorTarget: 'api',
+        explanation: 'The resource server verifies the token signature and expiry, then enforces the scope (user:read) before returning the protected resource.',
+        packetInfo: {
+          id: 'oauth-pkt-3',
+          source: 'Client Backend',
+          destination: 'api.provider.com/v1/user',
+          type: 'HTTP GET (Bearer Token)',
+          summary: 'Authorization: Bearer eyJhbGciOi... | 200 OK, scoped profile JSON',
+          payload: { authorization: 'Bearer eyJhbGciOi...', scope: 'user:read', status: 200 }
+        }
       }
     ],
     liveSandboxType: 'generic-simulator',
@@ -279,6 +364,13 @@ export const SECURITY_PROTOCOLS: Protocol[] = [
         options: ['SAML Assertion', 'PKCE (Proof Key for Code Exchange)', 'Basic Auth', 'HMAC Cookie'],
         correctAnswer: 1,
         explanation: 'PKCE (Proof Key for Code Exchange) creates a dynamic cryptographic verifier that prevents attackers from redeeming stolen authorization codes.'
+      },
+      {
+        id: 'oauth-q2',
+        question: 'Which OAuth 2.0 role hosts the protected user data and validates the access token sent with each API request?',
+        options: ['Resource Owner', 'Client', 'Authorization Server', 'Resource Server'],
+        correctAnswer: 3,
+        explanation: 'The Resource Server stores the protected resources and decides whether to accept a token, while the Authorization Server issues those tokens.'
       }
     ]
   },
@@ -371,6 +463,13 @@ export const SECURITY_PROTOCOLS: Protocol[] = [
         ],
         correctAnswer: 0,
         explanation: 'Kerberos relies heavily on timestamps in authenticators to prevent replay attacks; clock skew exceeding 5 minutes causes authentication to be rejected.'
+      },
+      {
+        id: 'krb-q2',
+        question: 'In a Kerberos TGS exchange, which key encrypts the service ticket that the KDC returns to the client?',
+        options: ['The client password hash', 'The krbtgt long-term key', 'The target service account long-term key', 'The client session key'],
+        correctAnswer: 2,
+        explanation: 'The KDC encrypts a service ticket with the long-term key it shares with that service, so only the intended file server can decrypt it.'
       }
     ]
   },
@@ -458,6 +557,13 @@ export const SECURITY_PROTOCOLS: Protocol[] = [
         options: ['XML', 'JSON', 'YAML', 'Protocol Buffers'],
         correctAnswer: 0,
         explanation: 'SAML 2.0 uses structured XML documents and XML Digital Signatures (XMLDSIG) to communicate identity assertions.'
+      },
+      {
+        id: 'saml-q2',
+        question: 'Which party must validate the IdP digital signature on the SAML assertion before creating a user session?',
+        options: ['The user browser', 'The Identity Provider itself', 'The Service Provider', 'The certificate authority'],
+        correctAnswer: 2,
+        explanation: 'The Service Provider checks the assertion signature against the IdP signing certificate it trusts before it grants access to the SaaS application.'
       }
     ]
   }

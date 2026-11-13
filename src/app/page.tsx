@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { PROTOCOLS, CATEGORIES_META } from '@/data/protocols';
 import { Protocol } from '@/types/protocol';
 import ProtocolCard from '@/components/ProtocolCard';
-import { Search, Layers, Cpu, Globe, Terminal, Sparkles, Filter, Activity, Zap, X, CornerDownRight } from 'lucide-react';
+import { Search, Layers, Cpu, Terminal, Sparkles, Activity, X } from 'lucide-react';
 
 export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -60,7 +60,7 @@ export default function HomePage() {
 
     let searchingGlobally = false;
 
-    // If query has no matches in the active category/layer, but DOES match globally across all 38 protocols:
+    // If the query has no matches in the active category/layer but matches globally, widen the search.
     if (query && filtered.length === 0 && (selectedCategory !== 'all' || selectedLayer !== 'all')) {
       const globalMatches = PROTOCOLS.filter((protocol) => matchesSearch(protocol, query));
       if (globalMatches.length > 0) {
@@ -85,18 +85,18 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center space-y-6">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-mono font-medium shadow-sm">
             <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-            <span>38 Verified IT, Computer Networking & IoT Protocols</span>
+            <span>{PROTOCOLS.length} interactive networking, internet &amp; IoT protocols</span>
           </div>
 
           <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white max-w-4xl mx-auto leading-tight">
             See How Protocols Work —{' '}
             <span className="bg-gradient-to-r from-indigo-400 via-cyan-400 to-emerald-400 bg-clip-text text-transparent">
-              Live & Step-by-Step
+              Step-by-Step
             </span>
           </h1>
 
           <p className="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed">
-            Click any protocol to launch an <strong>interactive animated session</strong>. Watch packets travel between clients, servers, and IoT brokers with live executable sandboxes.
+            Click any protocol to launch an <strong>animated step-by-step session</strong>. Watch packets travel between clients, servers, and IoT brokers with sandboxes that are explicitly labelled live or simulated.
           </p>
 
           {/* Quick CTA Pill Bar */}
@@ -113,14 +113,14 @@ export default function HomePage() {
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 border border-cyan-500/40 text-cyan-300 text-xs font-mono hover:bg-cyan-500/10 transition-colors"
             >
               <Activity className="w-4 h-4 text-cyan-400" />
-              <span>DNS Live Resolver</span>
+              <span>DNS Resolver Bench</span>
             </Link>
             <Link
               href="/protocols/mqtt"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 border border-amber-500/40 text-amber-300 text-xs font-mono hover:bg-amber-500/10 transition-colors"
             >
               <Cpu className="w-4 h-4 text-amber-400" />
-              <span>MQTT IoT Broker</span>
+              <span>MQTT Pub/Sub Simulator</span>
             </Link>
             <Link
               href="/protocols/tcp"
@@ -147,15 +147,18 @@ export default function HomePage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search by protocol (DNS), port (53, 1883), RFC, or layer..."
+                aria-label="Search protocols"
                 className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors font-mono shadow-inner"
               />
               {searchQuery && (
                 <button
+                  type="button"
                   onClick={() => setSearchQuery('')}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-white p-1"
                   title="Clear search"
+                  aria-label="Clear search"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-4 h-4" aria-hidden="true" />
                 </button>
               )}
             </div>
@@ -170,7 +173,9 @@ export default function HomePage() {
                 {OSI_LAYERS.map((layer) => (
                   <button
                     key={layer}
+                    type="button"
                     onClick={() => setSelectedLayer(layer)}
+                    aria-pressed={selectedLayer === layer}
                     className={`px-2.5 py-1 rounded-lg text-xs font-mono transition-colors ${
                       selectedLayer === layer
                         ? 'bg-indigo-600 text-white font-bold'
@@ -190,6 +195,7 @@ export default function HomePage() {
             {POPULAR_SEARCHES.map((term) => (
               <button
                 key={term}
+                type="button"
                 onClick={() => setSearchQuery(term)}
                 className="px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800 hover:border-slate-700 hover:text-indigo-300 font-mono text-[11px] text-slate-400 transition-colors"
               >
@@ -203,10 +209,12 @@ export default function HomePage() {
             {CATEGORIES_META.map((cat) => (
               <button
                 key={cat.id}
+                type="button"
                 onClick={() => {
                   setSelectedCategory(cat.id);
                   // if searching globally, reset view to this category
                 }}
+                aria-pressed={selectedCategory === cat.id && !isSearchingGlobally}
                 className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 ${
                   selectedCategory === cat.id && !isSearchingGlobally
                     ? 'bg-indigo-600 text-white font-semibold shadow-md shadow-indigo-600/30'
@@ -231,6 +239,7 @@ export default function HomePage() {
               💡 No protocols in &quot;{selectedCategory}&quot; matched &quot;{searchQuery}&quot;, showing <strong>{filteredProtocols.length} matches</strong> found across all categories:
             </span>
             <button
+              type="button"
               onClick={() => {
                 setSelectedCategory('all');
                 setSelectedLayer('all');
@@ -249,6 +258,7 @@ export default function HomePage() {
           </span>
           {(searchQuery || selectedCategory !== 'all' || selectedLayer !== 'all') && (
             <button
+              type="button"
               onClick={() => {
                 setSearchQuery('');
                 setSelectedCategory('all');
@@ -277,6 +287,7 @@ export default function HomePage() {
               We couldn&apos;t find any protocols matching your query. Try searching by protocol name (e.g. DNS, MQTT, TCP), standard port (e.g. 53, 443, 1883), or RFC.
             </p>
             <button
+              type="button"
               onClick={() => {
                 setSelectedCategory('all');
                 setSelectedLayer('all');

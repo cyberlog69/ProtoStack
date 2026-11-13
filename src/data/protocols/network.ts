@@ -132,6 +132,13 @@ export const NETWORK_PROTOCOLS: Protocol[] = [
         options: ['AAAA record', 'A record', 'CNAME record', 'MX record'],
         correctAnswer: 1,
         explanation: 'An A record maps a hostname to an IPv4 address, whereas an AAAA record maps to an IPv6 address.'
+      },
+      {
+        id: 'dns-q2',
+        question: 'Which transport protocol and port carries a standard DNS query?',
+        options: ['TCP port 53', 'UDP port 53', 'UDP port 123', 'TCP port 443'],
+        correctAnswer: 1,
+        explanation: 'Standard DNS queries use UDP port 53, while TCP port 53 is reserved for zone transfers and responses that exceed 512 bytes.'
       }
     ]
   },
@@ -193,6 +200,22 @@ export const NETWORK_PROTOCOLS: Protocol[] = [
           summary: 'TTL decremented to 63, Checksum updated',
           payload: { ttl: 63, nextHop: '142.250.190.46' }
         }
+      },
+      {
+        step: 3,
+        title: 'Fragmentation for a Smaller MTU',
+        description: 'The next link only supports a 1480-byte MTU, so the router splits the 1500-byte datagram into two fragments that the destination host reassembles.',
+        actorSource: 'router1',
+        actorTarget: 'hostB',
+        explanation: 'Both fragments keep the same 16-bit Identification value, every fragment except the last sets the More Fragments (MF) flag, and each offset is expressed in 8-byte units so the destination can rebuild the original datagram.',
+        packetInfo: {
+          id: 'ipv4-pkt-3',
+          source: 'Router Outbound',
+          destination: '142.250.190.46',
+          type: 'IPv4 Fragment',
+          summary: 'ID=0x5c21, MF=1, Offset=0, Len=1480',
+          payload: { identification: '0x5c21', flags: 'MF', fragmentOffset: 0, mtu: 1480, payloadBytes: 1460 }
+        }
       }
     ],
     liveSandboxType: 'generic-simulator',
@@ -203,6 +226,13 @@ export const NETWORK_PROTOCOLS: Protocol[] = [
         options: ['16 bits', '32 bits', '64 bits', '128 bits'],
         correctAnswer: 1,
         explanation: 'IPv4 addresses are 32 bits long, typically divided into four 8-bit octets.'
+      },
+      {
+        id: 'ipv4-q2',
+        question: 'Which IPv4 header field is decremented by every router along the forwarding path?',
+        options: ['Identification', 'Total Length', 'Time To Live', 'Header Checksum'],
+        correctAnswer: 2,
+        explanation: 'Each router decrements the Time To Live value by one and discards the datagram with an ICMP Time Exceeded message when it reaches zero.'
       }
     ]
   },
@@ -263,6 +293,22 @@ export const NETWORK_PROTOCOLS: Protocol[] = [
           summary: 'Router Advertisement: Prefix 2001:db8:1::/64',
           payload: { prefix: '2001:db8:1::/64', validLifetime: 86400 }
         }
+      },
+      {
+        step: 3,
+        title: 'Neighbor Solicitation for the Gateway',
+        description: 'Before sending traffic off-link, the node resolves the router link-local address by multicasting a Neighbor Solicitation and caching the returned link-layer address.',
+        actorSource: 'node',
+        actorTarget: 'router',
+        explanation: 'Neighbor Discovery replaces ARP: the solicitation goes to the solicited-node multicast group (ff02::1:ffXX:XXXX) rather than a broadcast, and the router answers with a Neighbor Advertisement (Type 136) carrying its MAC address for the neighbor cache.',
+        packetInfo: {
+          id: 'ipv6-pkt-3',
+          source: '2001:db8:1::1a2b:3c4d:5e6f',
+          destination: 'ff02::1:ff00:1 (Solicited-Node Multicast)',
+          type: 'ICMPv6 (Type 135)',
+          summary: 'Neighbor Solicitation: who has fe80::1?',
+          payload: { targetAddress: 'fe80::1', option: 'Source Link-Layer Address', hopLimit: 255, nextHeader: 'ICMPv6 (58)' }
+        }
       }
     ],
     liveSandboxType: 'generic-simulator',
@@ -273,6 +319,13 @@ export const NETWORK_PROTOCOLS: Protocol[] = [
         options: ['32 bits', '64 bits', '128 bits', '256 bits'],
         correctAnswer: 2,
         explanation: 'IPv6 uses 128-bit addresses, written in 8 groups of 4 hexadecimal digits.'
+      },
+      {
+        id: 'ipv6-q2',
+        question: 'How large is the fixed IPv6 base header, excluding extension headers?',
+        options: ['20 bytes', '40 bytes', '60 bytes', '128 bytes'],
+        correctAnswer: 1,
+        explanation: 'The IPv6 base header is a fixed 40 bytes, and optional features are chained through extension headers referenced by the Next Header field.'
       }
     ]
   },
@@ -333,6 +386,22 @@ export const NETWORK_PROTOCOLS: Protocol[] = [
           summary: 'Type=0, Code=0, Seq=1, RTT=14ms',
           payload: { type: 0, code: 0, sequence: 1, rttMs: 14 }
         }
+      },
+      {
+        step: 3,
+        title: 'Time Exceeded (Traceroute Hop Discovery)',
+        description: 'A traceroute probe is deliberately sent with TTL=1, so the first-hop router drops it and returns an ICMP Time Exceeded message that reveals its address.',
+        actorSource: 'client',
+        actorTarget: 'target',
+        explanation: 'Traceroute repeats the probe with TTL values of 1, 2, 3 and so on; each router that decrements the TTL to zero replies with Type 11 Code 0 (TTL expired in transit) and quotes the original header, allowing the client to map every hop.',
+        packetInfo: {
+          id: 'icmp-pkt-3',
+          source: '10.0.0.1 (First-Hop Router)',
+          destination: '192.168.1.50',
+          type: 'ICMP Time Exceeded',
+          summary: 'Type=11, Code=0, TTL expired in transit',
+          payload: { type: 11, code: 0, originalTtl: 1, quotedHeader: 'IPv4 header + first 8 payload bytes' }
+        }
       }
     ],
     liveSandboxType: 'generic-simulator',
@@ -343,6 +412,13 @@ export const NETWORK_PROTOCOLS: Protocol[] = [
         options: ['Type 0', 'Type 3', 'Type 8', 'Type 11'],
         correctAnswer: 2,
         explanation: 'ICMP Type 8 represents an Echo Request, and Type 0 represents the Echo Reply.'
+      },
+      {
+        id: 'icmp-q2',
+        question: 'Which ICMP message type does traceroute rely on to discover each hop along a path?',
+        options: ['Type 0 Echo Reply', 'Type 3 Destination Unreachable', 'Type 8 Echo Request', 'Type 11 Time Exceeded'],
+        correctAnswer: 3,
+        explanation: 'When a probe TTL expires, the router returns ICMP Type 11 Code 0, and the source address of that message identifies the hop.'
       }
     ]
   },
@@ -404,6 +480,22 @@ export const NETWORK_PROTOCOLS: Protocol[] = [
           summary: '192.168.1.20 is at dd:ee:ff:44:55:66',
           payload: { senderMac: 'dd:ee:ff:44:55:66', senderIp: '192.168.1.20' }
         }
+      },
+      {
+        step: 3,
+        title: 'ARP Cache Revalidation',
+        description: 'Minutes later Host A needs Host B again. Its cache entry has gone stale, so it sends a unicast ARP request straight to the cached MAC to confirm the binding.',
+        actorSource: 'hostA',
+        actorTarget: 'hostB',
+        explanation: 'ARP entries age out (typical reachable lifetime is tens of seconds), and rather than broadcasting again the host probes the cached MAC; a reply refreshes the entry, while silence marks it unreachable and restarts broadcast resolution.',
+        packetInfo: {
+          id: 'arp-pkt-3',
+          source: 'aa:bb:cc:11:22:33',
+          destination: 'dd:ee:ff:44:55:66',
+          type: 'ARP Request (Unicast Refresh)',
+          summary: 'Who has 192.168.1.20? Tell 192.168.1.10 (cache refresh)',
+          payload: { senderIp: '192.168.1.10', targetIp: '192.168.1.20', cacheState: 'STALE', probeAttempts: 1 }
+        }
       }
     ],
     liveSandboxType: 'generic-simulator',
@@ -414,6 +506,13 @@ export const NETWORK_PROTOCOLS: Protocol[] = [
         options: ['00:00:00:00:00:00', 'FF:FF:FF:FF:FF:FF', '255.255.255.255', 'AA:BB:CC:DD:EE:FF'],
         correctAnswer: 1,
         explanation: 'FF:FF:FF:FF:FF:FF is the Ethernet Layer 2 broadcast MAC address.'
+      },
+      {
+        id: 'arp-q2',
+        question: 'How is an ARP Reply delivered back to the host that sent the request?',
+        options: ['As a Layer 2 broadcast to every host', 'As a multicast to a group address', 'As a unicast frame addressed to the requester MAC', 'As an anycast frame to the nearest switch'],
+        correctAnswer: 2,
+        explanation: 'The replying host already learned the requester MAC from the broadcast request, so it answers with a single unicast frame.'
       }
     ]
   },
@@ -516,6 +615,13 @@ export const NETWORK_PROTOCOLS: Protocol[] = [
         options: ['ACID', 'DORA', 'REST', 'CRUD'],
         correctAnswer: 1,
         explanation: 'DORA stands for Discover, Offer, Request, and Acknowledge.'
+      },
+      {
+        id: 'dhcp-q2',
+        question: 'Which UDP ports are used by a DHCP server and a DHCP client respectively?',
+        options: ['67 server / 68 client', '68 server / 67 client', '53 server / 54 client', '123 server / 124 client'],
+        correctAnswer: 0,
+        explanation: 'DHCP servers listen on UDP port 67 and clients receive on UDP port 68, which stays true for every message in the DORA exchange.'
       }
     ]
   },
@@ -576,6 +682,22 @@ export const NETWORK_PROTOCOLS: Protocol[] = [
           summary: 'Prefix: 1.1.1.0/24 | AS_PATH: [13335]',
           payload: { nlri: ['1.1.1.0/24'], asPath: [13335], nextHop: '198.51.100.2' }
         }
+      },
+      {
+        step: 3,
+        title: 'BGP KEEPALIVE (Session Maintenance)',
+        description: 'With the session in Established state, each peer sends periodic KEEPALIVE messages so the other side knows the TCP connection is still healthy.',
+        actorSource: 'as2',
+        actorTarget: 'as1',
+        explanation: 'A KEEPALIVE is a 19-byte message (16-byte marker, 2-byte length, 1-byte type) and is sent about every one third of the negotiated hold time; if no message arrives within the full 180-second hold time, the session is torn down and routes are withdrawn.',
+        packetInfo: {
+          id: 'bgp-pkt-3',
+          source: '198.51.100.2:179',
+          destination: '198.51.100.1:179',
+          type: 'BGP KEEPALIVE',
+          summary: '19-byte KEEPALIVE | Hold timer reset to 180s',
+          payload: { messageLength: 19, type: 'KEEPALIVE', holdTime: 180, keepaliveInterval: 60 }
+        }
       }
     ],
     liveSandboxType: 'generic-simulator',
@@ -586,6 +708,13 @@ export const NETWORK_PROTOCOLS: Protocol[] = [
         options: ['UDP port 53', 'TCP port 179', 'SCTP port 3868', 'IP protocol 89'],
         correctAnswer: 1,
         explanation: 'BGP establishes peer connections over TCP port 179 to ensure reliable packet delivery of route updates.'
+      },
+      {
+        id: 'bgp-q2',
+        question: 'How does BGP prevent routing loops between Autonomous Systems?',
+        options: ['By counting hops towards the destination', 'By discarding updates whose AS_PATH already contains the receiving AS number', 'By flooding link-state advertisements to every router', 'By encrypting each update with a shared key'],
+        correctAnswer: 1,
+        explanation: 'A BGP speaker rejects any route whose AS_PATH already lists its own ASN, so an advertisement cannot circle back into an AS it has passed through.'
       }
     ]
   },
@@ -646,6 +775,22 @@ export const NETWORK_PROTOCOLS: Protocol[] = [
           summary: 'LSA Type 1 (Router LSA) Cost=10',
           payload: { lsaType: 'Router LSA', linkId: '10.0.2.0', metricCost: 10 }
         }
+      },
+      {
+        step: 3,
+        title: 'LSA Flooding & Acknowledgment',
+        description: 'Router 1 notices a link change, bumps the LSA sequence number, floods the new Router LSA to its neighbors, and Router 2 acknowledges it before rerunning SPF.',
+        actorSource: 'r1',
+        actorTarget: 'r2',
+        explanation: 'Flooding is reliable: an LSU is retransmitted until the neighbor answers with a Link State Acknowledgment, and the higher sequence number replaces the older copy in every Link State Database across the area.',
+        packetInfo: {
+          id: 'ospf-pkt-3',
+          source: '10.0.0.1',
+          destination: '224.0.0.5',
+          type: 'OSPF LSU (Flooded) / LSAck',
+          summary: 'LSA Type 1, Seq 0x80000005, Age 1s, Acknowledged',
+          payload: { lsaType: 'Router LSA', sequenceNumber: '0x80000005', lsaAge: 1, checksum: '0x2f4a', acknowledgment: 'LSAck' }
+        }
       }
     ],
     liveSandboxType: 'generic-simulator',
@@ -656,6 +801,13 @@ export const NETWORK_PROTOCOLS: Protocol[] = [
         options: ['Bellman-Ford algorithm', 'Dijkstra algorithm', 'Floyd-Warshall algorithm', 'Kruskal algorithm'],
         correctAnswer: 1,
         explanation: 'OSPF uses Dijkstra Shortest Path First (SPF) algorithm to calculate loop-free lowest-cost paths.'
+      },
+      {
+        id: 'ospf-q2',
+        question: 'Which multicast address do OSPF routers use to send Hello packets to all OSPF routers on a segment?',
+        options: ['224.0.0.5', '224.0.0.6', '224.0.0.9', '224.0.0.13'],
+        correctAnswer: 0,
+        explanation: 'Hellos go to AllSPFRouters 224.0.0.5, while 224.0.0.6 (AllDRouters) is used by the DR and BDR.'
       }
     ]
   },
@@ -716,6 +868,22 @@ export const NETWORK_PROTOCOLS: Protocol[] = [
           summary: 'Stratum 1 (GPS Atomic Clock) Offset: -2.3ms',
           payload: { stratum: 1, referenceId: 'GPS', offsetMs: -2.3, roundTripMs: 18.4 }
         }
+      },
+      {
+        step: 3,
+        title: 'Clock Slew & Poll Interval Adjustment',
+        description: 'The client applies the measured -2.3 ms offset gradually by slewing its clock frequency, then lengthens the polling interval as the offset stabilises.',
+        actorSource: 'client',
+        actorTarget: 'stratum1',
+        explanation: 'NTP disciplines the clock instead of jumping it: small offsets are corrected by slewing at no more than 500 ppm, and once the clock is stable the poll interval grows toward 1024 seconds to reduce load on the time server.',
+        packetInfo: {
+          id: 'ntp-pkt-3',
+          source: '192.168.1.50:123',
+          destination: 'time.google.com:123',
+          type: 'NTP Clock Discipline',
+          summary: 'Slew -2.3ms at 500ppm | Poll 64s -> 1024s',
+          payload: { offsetMs: -2.3, slewRatePpm: 500, previousPollSeconds: 64, newPollSeconds: 1024, stratum: 1 }
+        }
       }
     ],
     liveSandboxType: 'generic-simulator',
@@ -726,6 +894,13 @@ export const NETWORK_PROTOCOLS: Protocol[] = [
         options: ['Stratum 0', 'Stratum 1', 'Stratum 2', 'Stratum 16'],
         correctAnswer: 0,
         explanation: 'Stratum 0 devices are high-precision reference timekeeping devices like atomic clocks or GPS receivers.'
+      },
+      {
+        id: 'ntp-q2',
+        question: 'Which transport protocol and port does NTP use for time synchronization?',
+        options: ['UDP port 123', 'TCP port 123', 'UDP port 161', 'TCP port 37'],
+        correctAnswer: 0,
+        explanation: 'NTP exchanges fixed 48-byte request and reply packets over UDP port 123, relying on the four timestamps to cancel out network delay.'
       }
     ]
   }

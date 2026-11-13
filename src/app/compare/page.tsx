@@ -1,13 +1,21 @@
+import type { Metadata } from 'next';
 import React from 'react';
 import ComparisonView from '@/components/ComparisonView';
-import { ArrowLeftRight, Sparkles } from 'lucide-react';
+import { ArrowLeftRight } from 'lucide-react';
+
+export const metadata: Metadata = {
+  title: 'Compare Protocols Side-by-Side',
+  description:
+    'Compare any two networking protocols by OSI layer, standard port, RFC, reliability, and deployment trade-offs.',
+  alternates: { canonical: '/compare' },
+};
 
 export default function ComparePage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
       <div className="text-center space-y-3 pt-4">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-mono font-medium">
-          <ArrowLeftRight className="w-3.5 h-3.5 text-cyan-400" />
+          <ArrowLeftRight className="w-3.5 h-3.5 text-cyan-400" aria-hidden="true" />
           <span>Architectural Protocol Comparison Engine</span>
         </div>
 
@@ -19,7 +27,8 @@ export default function ComparePage() {
         </h1>
 
         <p className="text-base text-slate-300 max-w-2xl mx-auto leading-relaxed">
-          Evaluate performance trade-offs, packet overhead, reliability guarantees, and deployment use cases between any two protocols.
+          Evaluate performance trade-offs, packet overhead, reliability guarantees, and deployment use cases between any
+          two protocols.
         </p>
       </div>
 

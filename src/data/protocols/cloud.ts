@@ -59,6 +59,22 @@ export const CLOUD_PROTOCOLS: Protocol[] = [
           summary: 'DeliveryTag: 42 | ConsumerTag: ctag_1a',
           payload: { consumerTag: 'ctag_1a', deliveryTag: 42, redelivered: false }
         }
+      },
+      {
+        step: 3,
+        title: 'Worker Acknowledges Delivery (Basic.Ack)',
+        description: 'Warehouse worker finishes processing the order and returns `Basic.Ack` for delivery tag 42 on channel 1.',
+        actorSource: 'worker',
+        actorTarget: 'exchange',
+        explanation: 'The broker removes the message from `warehouse.queue` only after the ack arrives; an unacked message is requeued if the consumer channel closes.',
+        packetInfo: {
+          id: 'amqp-pkt-3',
+          source: 'Worker Node',
+          destination: 'RabbitMQ Broker',
+          type: 'AMQP Basic.Ack',
+          summary: 'DeliveryTag: 42 | Multiple: false | Channel: 1',
+          payload: { channel: 1, deliveryTag: 42, multiple: false, requeueOnFailure: true }
+        }
       }
     ],
     liveSandboxType: 'generic-simulator',
@@ -69,6 +85,18 @@ export const CLOUD_PROTOCOLS: Protocol[] = [
         options: ['Direct Exchange', 'Fanout Exchange', 'Topic Exchange', 'Headers Exchange'],
         correctAnswer: 1,
         explanation: 'A Fanout Exchange routes copies of received messages to all bound queues without inspecting the routing key.'
+      },
+      {
+        id: 'amqp-q2',
+        question: 'In AMQP, what does setting the message property `delivery-mode` to 2 request from the broker?',
+        options: [
+          'Best-effort delivery that may be dropped under memory pressure',
+          'Persistent delivery, so the message survives a broker restart once written to disk',
+          'Immediate delivery directly to a consumer, bypassing queues',
+          'Duplicate delivery of the message to two exchanges'
+        ],
+        correctAnswer: 1,
+        explanation: 'Delivery mode 2 marks a message persistent: the broker writes it to durable storage so it is recovered after a restart, provided the queue is also durable.'
       }
     ]
   },
@@ -130,6 +158,22 @@ export const CLOUD_PROTOCOLS: Protocol[] = [
           summary: 'HighWatermark: 10920 | StartingOffset: 10420',
           payload: { throttleTimeMs: 0, errorCode: 0, highWatermark: 10920 }
         }
+      },
+      {
+        step: 3,
+        title: 'OffsetCommit (ApiKey: 8)',
+        description: 'After processing the fetched records, the consumer commits its progress to the group coordinator.',
+        actorSource: 'consumer',
+        actorTarget: 'broker',
+        explanation: 'The commit writes offset 10920 for `user-clicks` partition 0 into the internal `__consumer_offsets` topic, so a rebalance or restart resumes from that point.',
+        packetInfo: {
+          id: 'kafka-pkt-3',
+          source: 'AnalyticsConsumer',
+          destination: 'KafkaBroker:9092',
+          type: 'Kafka OffsetCommitRequest (ApiKey: 8)',
+          summary: 'Group: "analytics-cg" | Topic: "user-clicks" | Partition: 0 | Offset: 10920',
+          payload: { groupId: 'analytics-cg', generationId: 7, topic: 'user-clicks', partition: 0, committedOffset: 10920 }
+        }
       }
     ],
     liveSandboxType: 'generic-simulator',
@@ -145,6 +189,18 @@ export const CLOUD_PROTOCOLS: Protocol[] = [
         ],
         correctAnswer: 1,
         explanation: 'Kafka guarantees total in-order delivery of messages strictly within a specific partition of a topic.'
+      },
+      {
+        id: 'kafka-q2',
+        question: 'Where does Kafka durably store the committed offsets of a consumer group by default?',
+        options: [
+          'In a local file on each consumer machine',
+          'In ZooKeeper under /consumers/offsets',
+          'In the internal compacted topic `__consumer_offsets`',
+          'In the producer record batch headers'
+        ],
+        correctAnswer: 2,
+        explanation: 'Consumer group offsets are committed to the internal `__consumer_offsets` topic, which is log-compacted so only the latest offset per group/topic/partition is retained.'
       }
     ]
   },
@@ -205,6 +261,22 @@ export const CLOUD_PROTOCOLS: Protocol[] = [
           summary: '+OK (Execution Time: 0.04ms)',
           payload: { status: 'OK', rawWire: '+OK\\r\\n' }
         }
+      },
+      {
+        step: 3,
+        title: 'Pipelined Command Batch (INCR / INCR / GET)',
+        description: 'Client writes three commands back-to-back in a single TCP segment instead of waiting for each reply.',
+        actorSource: 'client',
+        actorTarget: 'redis',
+        explanation: 'Redis executes the batch in order and returns `:1\\r\\n:2\\r\\n$2\\r\\n10\\r\\n` as one buffer, eliminating three network round trips.',
+        packetInfo: {
+          id: 'resp-pkt-3',
+          source: 'Client:54321',
+          destination: 'RedisServer:6379',
+          type: 'RESP Pipelined Commands',
+          summary: '*2 INCR hits | *2 INCR hits | *2 GET hits (one write, three replies)',
+          payload: { commands: ['INCR hits', 'INCR hits', 'GET hits'], replies: [':1', ':2', '$2 10'], roundTripsSaved: 3 }
+        }
       }
     ],
     liveSandboxType: 'generic-simulator',
@@ -215,6 +287,18 @@ export const CLOUD_PROTOCOLS: Protocol[] = [
         options: ['Plus (+)', 'Dollar ($)', 'Asterisk (*)', 'Colon (:)'],
         correctAnswer: 1,
         explanation: 'The dollar sign `$` denotes a bulk string and is followed by the byte length (e.g. `$5\\r\\nhello\\r\\n`).'
+      },
+      {
+        id: 'resp-q2',
+        question: 'What is the main performance benefit of RESP pipelining?',
+        options: [
+          'Commands are executed in parallel across multiple Redis threads',
+          'Multiple commands are sent before reading replies, avoiding a round trip per command',
+          'Responses are compressed with gzip before transmission',
+          'Replies are cached on the client so repeated commands never reach the server'
+        ],
+        correctAnswer: 1,
+        explanation: 'With pipelining the client writes many commands at once and only then reads the replies, which removes per-command network latency; Redis still executes them sequentially.'
       }
     ]
   },
@@ -307,6 +391,18 @@ export const CLOUD_PROTOCOLS: Protocol[] = [
         ],
         correctAnswer: 0,
         explanation: 'STUN (Session Traversal Utilities for NAT) allows a client behind a router/NAT to discover its public IP address and port to share with peers.'
+      },
+      {
+        id: 'webrtc-q2',
+        question: 'When direct peer-to-peer connectivity cannot be established through NAT or firewall, what does a TURN server provide?',
+        options: [
+          'A relay that forwards the encrypted media between the peers',
+          'A certificate authority that signs the DTLS fingerprints',
+          'A transcoder that converts VP9 video into H.264',
+          'A DNS resolver that maps peer names to IP addresses'
+        ],
+        correctAnswer: 0,
+        explanation: 'TURN allocates a public relay address and forwards packets between peers when ICE cannot find a working direct candidate path; media stays encrypted end to end.'
       }
     ]
   },
@@ -399,6 +495,18 @@ export const CLOUD_PROTOCOLS: Protocol[] = [
         ],
         correctAnswer: 0,
         explanation: 'When subscribers join a Queue Group, NATS automatically load-balances messages across them in a 1-of-N pattern.'
+      },
+      {
+        id: 'nats-q2',
+        question: 'What delivery guarantee does core NATS publish/subscribe provide without JetStream enabled?',
+        options: [
+          'Exactly-once delivery with automatic deduplication',
+          'At-most-once delivery, where messages are dropped if no subscriber is connected',
+          'At-least-once delivery with server-side redelivery',
+          'Transactional delivery with two-phase commit'
+        ],
+        correctAnswer: 1,
+        explanation: 'Core NATS is fire-and-forget at-most-once: a message published with no active matching subscriber is lost, and JetStream must be enabled for persistence and redelivery.'
       }
     ]
   },
@@ -485,6 +593,13 @@ export const CLOUD_PROTOCOLS: Protocol[] = [
         options: ['NULL byte (0x00)', 'Carriage Return Line Feed (CRLF)', 'Double Semicolon (;;)', 'Closing curly brace (})'],
         correctAnswer: 0,
         explanation: 'Every STOMP frame body terminates with a null byte (ASCII 0, hex 0x00) following the body content.'
+      },
+      {
+        id: 'stomp-q2',
+        question: 'Which STOMP command does a client use to publish a message to a destination?',
+        options: ['SEND', 'PUBLISH', 'POST', 'MESSAGE'],
+        correctAnswer: 0,
+        explanation: 'A client publishes with a SEND frame carrying a `destination` header; the broker then delivers the payload in a MESSAGE frame to matching subscribers.'
       }
     ]
   }

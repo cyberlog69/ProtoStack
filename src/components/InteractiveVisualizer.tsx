@@ -1,17 +1,25 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Protocol, InteractiveStep } from '@/types/protocol';
-import { 
-  Play, Pause, RotateCcw, ChevronRight, ChevronLeft, 
-  Laptop, Server, Globe, Database, ShieldCheck, Cpu, 
-  Smartphone, Network, Radio, Terminal, CheckCircle2, 
-  Clock, CreditCard, Zap, Eye, Code, ArrowRight
+import React, { useCallback, useEffect, useState } from 'react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { Protocol } from '@/types/protocol';
+import { crc32Hex, hexDump } from '@/lib/hex';
+import {
+  Play, Pause, RotateCcw, ChevronRight, ChevronLeft,
+  Laptop, Server, Globe, Database, ShieldCheck, Cpu,
+  Smartphone, Network, Radio, CheckCircle2,
+  Clock, CreditCard, Zap, Eye
 } from 'lucide-react';
 
 interface VisualizerProps {
   protocol: Protocol;
+}
+
+function isInteractiveTarget(target: EventTarget | null): boolean {
+  return (
+    target instanceof HTMLElement &&
+    Boolean(target.closest('input, textarea, select, button, a, [contenteditable="true"], [role="textbox"]'))
+  );
 }
 
 export default function InteractiveVisualizer({ protocol }: VisualizerProps) {
@@ -21,6 +29,7 @@ export default function InteractiveVisualizer({ protocol }: VisualizerProps) {
   const [activeTab, setActiveTab] = useState<'explanation' | 'packet' | 'hex' | 'nodes'>('explanation');
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [packetProgress, setPacketProgress] = useState(0); // 0 to 100% animation progress
+  const shouldReduceMotion = useReducedMotion();
 
   const steps = protocol.interactiveSteps;
   const currentStep = steps[currentStepIndex] || steps[0];
@@ -63,48 +72,81 @@ export default function InteractiveVisualizer({ protocol }: VisualizerProps) {
     };
   }, [isPlaying, currentStepIndex, steps.length, stepDuration]);
 
-  // Keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+  const handlePlayToggle = useCallback(() => {
+    if (isPlaying) {
+      setIsPlaying(false);
+      return;
+    }
 
-      if (e.key === 'ArrowRight') {
-        e.preventDefault();
-        handleNext();
-      } else if (e.key === 'ArrowLeft') {
-        e.preventDefault();
-        handlePrev();
-      } else if (e.key === ' ') {
-        e.preventDefault();
-        setIsPlaying((prev) => !prev);
-      }
-    };
+    if (currentStepIndex >= steps.length - 1) {
+      setCurrentStepIndex(0);
+      setPacketProgress(0);
+    }
+    setIsPlaying(true);
+  }, [currentStepIndex, isPlaying, steps.length]);
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentStepIndex, steps.length]);
-
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     if (currentStepIndex < steps.length - 1) {
       setCurrentStepIndex(currentStepIndex + 1);
       setPacketProgress(0);
       setIsPlaying(false);
     }
-  };
+  }, [currentStepIndex, steps.length]);
 
-  const handlePrev = () => {
+  const handlePrev = useCallback(() => {
     if (currentStepIndex > 0) {
       setCurrentStepIndex(currentStepIndex - 1);
       setPacketProgress(0);
       setIsPlaying(false);
     }
-  };
+  }, [currentStepIndex]);
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     setIsPlaying(false);
     setCurrentStepIndex(0);
     setPacketProgress(0);
-  };
+  }, []);
+
+  // Keyboard navigation. Handlers are declared above so this effect always
+  // subscribes to the current versions.
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (isInteractiveTarget(event.target)) return;
+
+      if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        handleNext();
+      } else if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        handlePrev();
+      } else if (event.key === ' ') {
+        event.preventDefault();
+        handlePlayToggle();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleNext, handlePrev, handlePlayToggle]);
+
+
+  if (!currentStep) {
+    return (
+      <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-10 text-center space-y-2">
+        <p className="text-sm font-semibold text-white">No packet steps are available for this protocol yet.</p>
+        <p className="text-xs text-slate-400">
+          The animated flow is generated from the protocol data set and this entry has no steps.
+        </p>
+      </div>
+    );
+  }
+
+  const packetText =
+    currentStep.packetInfo
+      ? JSON.stringify(currentStep.packetInfo.payload)
+      : currentStep.codeSnippet || currentStep.description;
+  const packetHexLines = hexDump(packetText);
+  const packetChecksum = crc32Hex(packetText);
 
   const getActorIcon = (iconName: string) => {
     switch (iconName) {
@@ -149,7 +191,7 @@ export default function InteractiveVisualizer({ protocol }: VisualizerProps) {
               Interactive Packet Flow Simulation
             </h3>
             <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-              Live Wire
+              Animated Model
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-0.5">
@@ -164,7 +206,10 @@ export default function InteractiveVisualizer({ protocol }: VisualizerProps) {
             {([0.5, 1, 2] as const).map((s) => (
               <button
                 key={s}
+                type="button"
                 onClick={() => setSpeed(s)}
+                aria-pressed={speed === s}
+                aria-label={`Playback speed ${s}x`}
                 className={`px-2 py-1 rounded text-[10px] font-bold transition-colors ${
                   speed === s ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
                 }`}
@@ -176,46 +221,54 @@ export default function InteractiveVisualizer({ protocol }: VisualizerProps) {
           </div>
 
           <button
+            type="button"
             onClick={handlePrev}
             disabled={currentStepIndex === 0}
+            aria-label="Previous step"
             className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs transition-colors"
             title="Previous step (Left Arrow)"
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="w-4 h-4" aria-hidden="true" />
           </button>
 
           <button
-            onClick={() => setIsPlaying(!isPlaying)}
+            type="button"
+            onClick={handlePlayToggle}
+            aria-label={isPlaying ? 'Pause animation' : 'Play animation'}
             className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-md shadow-indigo-600/30"
           >
             {isPlaying ? (
               <>
-                <Pause className="w-3.5 h-3.5 fill-current" />
+                <Pause className="w-3.5 h-3.5 fill-current" aria-hidden="true" />
                 <span>Pause</span>
               </>
             ) : (
               <>
-                <Play className="w-3.5 h-3.5 fill-current" />
+                <Play className="w-3.5 h-3.5 fill-current" aria-hidden="true" />
                 <span>{currentStepIndex === steps.length - 1 ? 'Replay' : 'Auto Play'}</span>
               </>
             )}
           </button>
 
           <button
+            type="button"
             onClick={handleNext}
             disabled={currentStepIndex === steps.length - 1}
+            aria-label="Next step"
             className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs transition-colors"
             title="Next step (Right Arrow)"
           >
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-4 h-4" aria-hidden="true" />
           </button>
 
           <button
+            type="button"
             onClick={handleReset}
+            aria-label="Reset to first step"
             className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition-colors ml-1"
             title="Reset to Step 1"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
+            <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -243,12 +296,12 @@ export default function InteractiveVisualizer({ protocol }: VisualizerProps) {
           <motion.div
             className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-20 pointer-events-none flex flex-col items-center"
             style={{ left: `${currentPacketX}%` }}
-            animate={{ scale: [1, 1.15, 1] }}
-            transition={{ repeat: Infinity, duration: 1.2 }}
+            animate={shouldReduceMotion ? undefined : { scale: [1, 1.15, 1] }}
+            transition={shouldReduceMotion ? undefined : { repeat: Infinity, duration: 1.2 }}
           >
             {/* Glowing Packet Capsule */}
             <div className="px-2.5 py-1 rounded-full bg-gradient-to-r from-cyan-400 via-indigo-500 to-purple-500 text-white font-mono text-[10px] font-black shadow-xl shadow-cyan-500/50 flex items-center gap-1.5 border border-white/40">
-              <Zap className="w-3 h-3 text-yellow-300 animate-pulse fill-current" />
+              <Zap className="w-3 h-3 text-yellow-300 animate-pulse fill-current" aria-hidden="true" />
               <span>{currentStep.packetInfo?.type.split(' ')[0] || 'PACKET'}</span>
             </div>
 
@@ -259,18 +312,21 @@ export default function InteractiveVisualizer({ protocol }: VisualizerProps) {
 
         {/* Network Nodes (Actors) */}
         <div className="relative z-10 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 items-center">
-          {protocol.actors.map((actor, idx) => {
+          {protocol.actors.map((actor) => {
             const isSource = actor.id === currentStep.actorSource;
             const isTarget = actor.id === currentStep.actorTarget;
             const isActive = isSource || isTarget;
             const isSelected = selectedNodeId === actor.id;
 
             return (
-              <motion.div
+              <motion.button
                 key={actor.id}
+                type="button"
                 onClick={() => setSelectedNodeId(actor.id === selectedNodeId ? null : actor.id)}
-                whileHover={{ scale: 1.04 }}
-                className={`relative cursor-pointer flex flex-col items-center text-center p-4 rounded-2xl border transition-all duration-300 ${
+                aria-pressed={isSelected}
+                aria-label={`${actor.label} (${actor.id})`}
+                whileHover={shouldReduceMotion ? undefined : { scale: 1.04 }}
+                className={`relative cursor-pointer text-left flex flex-col items-center text-center p-4 rounded-2xl border transition-all duration-300 ${
                   isActive
                     ? isSource
                       ? 'bg-indigo-950/70 border-indigo-400 shadow-xl shadow-indigo-500/30 ring-2 ring-indigo-500/40'
@@ -319,7 +375,7 @@ export default function InteractiveVisualizer({ protocol }: VisualizerProps) {
                 {isTarget && packetProgress > 85 && (
                   <span className="absolute inset-0 rounded-2xl border-2 border-cyan-400 animate-ping pointer-events-none opacity-40" />
                 )}
-              </motion.div>
+              </motion.button>
             );
           })}
         </div>
@@ -355,10 +411,11 @@ export default function InteractiveVisualizer({ protocol }: VisualizerProps) {
 
             <div className="flex items-center gap-2">
               <button
+                type="button"
                 onClick={() => setActiveTab('packet')}
                 className="text-xs font-mono px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 flex items-center gap-1.5 transition-colors border border-slate-700"
               >
-                <Eye className="w-3.5 h-3.5" />
+                <Eye className="w-3.5 h-3.5" aria-hidden="true" />
                 <span>Wireshark View</span>
               </button>
             </div>
@@ -371,11 +428,14 @@ export default function InteractiveVisualizer({ protocol }: VisualizerProps) {
         {steps.map((s, idx) => (
           <button
             key={s.step}
+            type="button"
             onClick={() => {
               setIsPlaying(false);
               setCurrentStepIndex(idx);
               setPacketProgress(0);
             }}
+            aria-current={idx === currentStepIndex ? 'step' : undefined}
+            aria-label={`Go to step ${s.step}`}
             className={`px-3 py-1 rounded-md text-xs font-mono transition-all shrink-0 flex items-center gap-1.5 ${
               idx === currentStepIndex
                 ? 'bg-indigo-600 text-white font-bold shadow-md'
@@ -394,6 +454,7 @@ export default function InteractiveVisualizer({ protocol }: VisualizerProps) {
       <div className="p-6 bg-slate-900/70">
         <div className="flex items-center gap-4 border-b border-slate-800 pb-3 mb-4 overflow-x-auto text-xs font-semibold">
           <button
+            type="button"
             onClick={() => setActiveTab('explanation')}
             className={`pb-1 transition-colors border-b-2 shrink-0 ${
               activeTab === 'explanation'
@@ -404,6 +465,7 @@ export default function InteractiveVisualizer({ protocol }: VisualizerProps) {
             Protocol Flow Explanation
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('packet')}
             className={`pb-1 transition-colors border-b-2 shrink-0 ${
               activeTab === 'packet'
@@ -414,6 +476,7 @@ export default function InteractiveVisualizer({ protocol }: VisualizerProps) {
             Wireshark Packet Inspector
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('hex')}
             className={`pb-1 transition-colors border-b-2 shrink-0 ${
               activeTab === 'hex'
@@ -425,6 +488,7 @@ export default function InteractiveVisualizer({ protocol }: VisualizerProps) {
           </button>
           {currentStep.codeSnippet && (
             <button
+              type="button"
               onClick={() => setActiveTab('nodes')}
               className={`pb-1 transition-colors border-b-2 shrink-0 ${
                 activeTab === 'nodes'
@@ -479,8 +543,8 @@ export default function InteractiveVisualizer({ protocol }: VisualizerProps) {
 
             <div className="rounded-xl bg-slate-950 border border-slate-800 p-4 overflow-x-auto">
               <div className="text-slate-500 text-[11px] mb-2 flex items-center justify-between">
-                <span>// Decoded Wireshark Protocol Tree</span>
-                <span className="text-emerald-400">Status: Verified OK</span>
+                <span>{'// Decoded from the current step payload'}</span>
+                <span className="text-emerald-400">CRC32: {packetChecksum}</span>
               </div>
               <pre className="text-slate-300 leading-relaxed">
                 {JSON.stringify(currentStep.packetInfo.payload, null, 2)}
@@ -492,12 +556,24 @@ export default function InteractiveVisualizer({ protocol }: VisualizerProps) {
         {/* Tab 3: Hex Dump Stream */}
         {activeTab === 'hex' && (
           <div className="rounded-xl bg-slate-950 border border-slate-800 p-4 font-mono text-xs space-y-2 animate-in fade-in duration-200">
-            <div className="text-slate-500 text-[11px]">// Physical Wire Hexadecimal Frame Dump</div>
+            <div className="flex flex-wrap items-center justify-between gap-2 text-slate-500 text-[11px]">
+              <span>{'// Hexadecimal dump generated from this step’s payload'}</span>
+              <span className="text-emerald-400">CRC32: {packetChecksum}</span>
+            </div>
             <div className="text-slate-400 leading-loose select-all overflow-x-auto">
-              <span className="text-indigo-400">0000</span>   c4 b3 01 1a 2b 3c e0 d5  5e 89 ab cd 08 00 45 00  ....+...^.....E.<br />
-              <span className="text-indigo-400">0010</span>   00 3c 1a 2b 40 00 40 06  b8 42 c0 a8 01 64 5d b8  .&lt;.+@.@..B...d].<br />
-              <span className="text-indigo-400">0020</span>   d8 22 d4 31 00 50 00 00  03 e8 00 00 00 00 a0 02  .&quot;.1.P..........<br />
-              <span className="text-indigo-400">0030</span>   fa f0 3f a1 00 00 02 04  05 b4 04 02 08 0a 01 2a  ..?............*
+              {packetHexLines.length > 0 ? (
+                packetHexLines.map((line) => (
+                  <div key={line.offset} className="whitespace-pre">
+                    <span className="text-indigo-400">{line.offset}</span>
+                    {'  '}
+                    {line.hex}
+                    {'  '}
+                    <span className="text-slate-500">{line.ascii}</span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-slate-500">{'// This step has no payload to encode.'}</p>
+              )}
             </div>
           </div>
         )}

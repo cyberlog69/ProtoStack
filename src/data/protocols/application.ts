@@ -58,6 +58,22 @@ export const APPLICATION_PROTOCOLS: Protocol[] = [
           summary: 'HTTP/1.1 200 OK (Content-Type: application/json)',
           payload: { status: 200, statusText: 'OK', headers: { 'Content-Type': 'application/json' }, body: '{"success": true}' }
         }
+      },
+      {
+        step: 3,
+        title: 'Persistent Connection Reuse (Keep-Alive)',
+        description: 'Client issues a second request on the same open TCP connection instead of opening a new socket.',
+        actorSource: 'browser',
+        actorTarget: 'webserver',
+        explanation: 'HTTP/1.1 keeps the TCP connection open by default, so keep-alive lets subsequent requests skip the TCP and TLS handshake.',
+        packetInfo: {
+          id: 'http-pkt-3',
+          source: '192.168.1.100',
+          destination: '93.184.216.34:443',
+          type: 'HTTP Request',
+          summary: 'GET /api/v1/protocols/42 HTTP/1.1 | Connection: keep-alive',
+          payload: { method: 'GET', path: '/api/v1/protocols/42', headers: { Connection: 'keep-alive' } }
+        }
       }
     ],
     liveSandboxType: 'http-client',
@@ -68,6 +84,18 @@ export const APPLICATION_PROTOCOLS: Protocol[] = [
         options: ['200 OK', '201 Created', '204 No Content', '301 Moved Permanently'],
         correctAnswer: 1,
         explanation: 'HTTP 201 Created is the standard response sent when a POST request successfully creates a new resource.'
+      },
+      {
+        id: 'http-q2',
+        question: 'What does the HTTP/1.1 Connection: keep-alive header request?',
+        options: [
+          'That the server encrypt the response body',
+          'That the underlying TCP connection stays open for further requests',
+          'That the client accepts gzip-compressed content',
+          'That the server responds without a status line'
+        ],
+        correctAnswer: 1,
+        explanation: 'Keep-alive asks both endpoints to keep the TCP connection open so later requests can reuse it instead of reconnecting.'
       }
     ]
   },
@@ -154,6 +182,13 @@ export const APPLICATION_PROTOCOLS: Protocol[] = [
         options: ['200 OK', '101 Switching Protocols', '301 Moved Permanently', '204 No Content'],
         correctAnswer: 1,
         explanation: 'The server responds with HTTP 101 Switching Protocols to indicate connection protocol upgrade.'
+      },
+      {
+        id: 'ws-q2',
+        question: 'Which WebSocket opcode begins a graceful closing handshake?',
+        options: ['0x1 (Text)', '0x2 (Binary)', '0x8 (Close)', '0x9 (Ping)'],
+        correctAnswer: 2,
+        explanation: 'A frame with opcode 0x8 (Close) starts the closing handshake, after which either peer may close the underlying TCP connection.'
       }
     ]
   },
@@ -162,7 +197,7 @@ export const APPLICATION_PROTOCOLS: Protocol[] = [
     slug: 'ssh',
     name: 'SSH',
     fullName: 'Secure Shell',
-    category: 'security',
+    category: 'application',
     osiLayer: 'Application',
     port: 22,
     rfc: 'RFC 4253',
@@ -214,6 +249,22 @@ export const APPLICATION_PROTOCOLS: Protocol[] = [
           summary: 'Authenticated as user "root" | PTY Allocated',
           payload: { authSuccess: true, channelType: 'session' }
         }
+      },
+      {
+        step: 3,
+        title: 'Encrypted Channel Data Exchange',
+        description: 'Client sends shell commands and the server streams command output back inside the encrypted tunnel.',
+        actorSource: 'admin',
+        actorTarget: 'server',
+        explanation: 'SSH_MSG_CHANNEL_DATA carries stdin/stdout bytes; each packet is encrypted and integrity-protected with the negotiated cipher and MAC.',
+        packetInfo: {
+          id: 'ssh-pkt-3',
+          source: 'Client:51234',
+          destination: 'Server:22',
+          type: 'SSH_MSG_CHANNEL_DATA',
+          summary: 'Channel 0 data: "ls -la /var/www"',
+          payload: { channel: 0, data: 'ls -la /var/www', cipher: 'chacha20-poly1305@openssh.com' }
+        }
       }
     ],
     liveSandboxType: 'generic-simulator',
@@ -224,6 +275,18 @@ export const APPLICATION_PROTOCOLS: Protocol[] = [
         options: ['Port 21', 'Port 22', 'Port 23', 'Port 80'],
         correctAnswer: 1,
         explanation: 'SSH operates on TCP port 22 by default (whereas Telnet was port 23 and FTP was port 21).'
+      },
+      {
+        id: 'ssh-q2',
+        question: 'What is the purpose of the SSH key exchange (KEX) phase?',
+        options: [
+          'To compress the session traffic before encryption',
+          'To derive a shared symmetric session key without sending it over the wire',
+          'To assign the remote user a Unix UID and home directory',
+          'To download the server host key to known_hosts'
+        ],
+        correctAnswer: 1,
+        explanation: 'Key exchange uses Diffie-Hellman (for example curve25519-sha256) so both sides derive the same session key without ever transmitting it.'
       }
     ]
   },
@@ -232,7 +295,7 @@ export const APPLICATION_PROTOCOLS: Protocol[] = [
     slug: 'grpc',
     name: 'gRPC',
     fullName: 'gRPC Remote Procedure Call',
-    category: 'cloud',
+    category: 'application',
     osiLayer: 'Application',
     port: '443 / 50051',
     rfc: 'CNCF Project Standard',
@@ -284,6 +347,22 @@ export const APPLICATION_PROTOCOLS: Protocol[] = [
           summary: 'grpc-status: 0 (OK) | PaymentApproved',
           payload: { grpcStatus: 0, statusDescription: 'OK', paymentId: 'pay_982341' }
         }
+      },
+      {
+        step: 3,
+        title: 'Second RPC Multiplexed on the Same Connection',
+        description: 'Client opens another call on the existing HTTP/2 connection using a new stream ID while the first stream is still active.',
+        actorSource: 'client',
+        actorTarget: 'service',
+        explanation: 'HTTP/2 stream multiplexing lets many concurrent gRPC calls share one TCP connection without head-of-line blocking between streams.',
+        packetInfo: {
+          id: 'grpc-pkt-3',
+          source: 'OrderService',
+          destination: 'PaymentService:50051',
+          type: 'HTTP/2 HEADERS (gRPC)',
+          summary: 'POST /payment.v1.PaymentService/RefundPayment | stream 3',
+          payload: { streamId: 3, method: 'RefundPayment', 'content-type': 'application/grpc+proto', te: 'trailers' }
+        }
       }
     ],
     liveSandboxType: 'generic-simulator',
@@ -294,6 +373,18 @@ export const APPLICATION_PROTOCOLS: Protocol[] = [
         options: ['JSON Schema', 'Protocol Buffers (Protobuf)', 'XML / SOAP', 'Apache Avro'],
         correctAnswer: 1,
         explanation: 'gRPC uses Protocol Buffers (.proto files) to define strong service contracts and serialize binary messages.'
+      },
+      {
+        id: 'grpc-q2',
+        question: 'How does a gRPC server report an application-level failure such as NOT_FOUND?',
+        options: [
+          'By returning an HTTP 404 status on the response headers',
+          'By writing a grpc-status trailer with the matching status code',
+          'By resetting the TCP connection immediately',
+          'By sending a JSON error object as the response body'
+        ],
+        correctAnswer: 1,
+        explanation: 'gRPC carries the outcome in trailers, so NOT_FOUND is sent as grpc-status: 5 regardless of the HTTP/2 response status.'
       }
     ]
   },
@@ -354,6 +445,22 @@ export const APPLICATION_PROTOCOLS: Protocol[] = [
           summary: 'Value: Counter64 = 49281729482 bytes',
           payload: { value: 49281729482, errorStatus: 0 }
         }
+      },
+      {
+        step: 3,
+        title: 'Unsolicited SNMP Trap to the Manager',
+        description: 'Switch detects a link-down event and proactively notifies the NMS without waiting for the next poll.',
+        actorSource: 'switch',
+        actorTarget: 'manager',
+        explanation: 'Traps are asynchronous notifications sent to UDP port 162, carrying the event OID and its binding values.',
+        packetInfo: {
+          id: 'snmp-pkt-3',
+          source: '10.0.0.1:161',
+          destination: '10.0.0.50:162',
+          type: 'SNMP Trap (v3)',
+          summary: 'linkDown on ifIndex 1 (Gi0/1)',
+          payload: { trapOid: '1.3.6.1.6.3.1.1.5.3', ifIndex: 1, ifAdminStatus: 'up', ifOperStatus: 'down' }
+        }
       }
     ],
     liveSandboxType: 'generic-simulator',
@@ -364,6 +471,13 @@ export const APPLICATION_PROTOCOLS: Protocol[] = [
         options: ['SNMP Probe', 'SNMP Trap', 'SNMP Echo', 'SNMP Beacon'],
         correctAnswer: 1,
         explanation: 'An SNMP Trap is an asynchronous alert sent to UDP port 162 when an event occurs (e.g., link down, power supply failure).'
+      },
+      {
+        id: 'snmp-q2',
+        question: 'Which transport protocol and port does routine SNMP polling use?',
+        options: ['TCP port 161', 'UDP port 161', 'UDP port 162', 'TCP port 162'],
+        correctAnswer: 1,
+        explanation: 'SNMP manager GET and GET-NEXT requests go to the agent over UDP port 161, while traps are sent to UDP port 162.'
       }
     ]
   },
@@ -424,6 +538,22 @@ export const APPLICATION_PROTOCOLS: Protocol[] = [
           summary: 'MAIL FROM:<alice@x.com> -> RCPT TO:<bob@y.com>',
           payload: { from: 'alice@x.com', to: 'bob@y.com', subject: 'Project Status Update' }
         }
+      },
+      {
+        step: 3,
+        title: 'Server Acknowledges Queueing (250)',
+        description: 'Mail server accepts the completed message, assigns it a queue ID, and confirms with a 250 reply.',
+        actorSource: 'mta',
+        actorTarget: 'client',
+        explanation: 'The 250 response means responsibility for delivery has transferred to the MTA; the client may now send QUIT.',
+        packetInfo: {
+          id: 'smtp-pkt-3',
+          source: 'smtp.mail.com:587',
+          destination: 'Client:54321',
+          type: 'SMTP Response',
+          summary: '250 2.0.0 Ok: queued as 4fa1B2C3D4',
+          payload: { code: 250, enhancedStatus: '2.0.0', queueId: '4fa1B2C3D4', state: 'queued' }
+        }
       }
     ],
     liveSandboxType: 'generic-simulator',
@@ -434,6 +564,13 @@ export const APPLICATION_PROTOCOLS: Protocol[] = [
         options: ['SMTP', 'POP3', 'SNMP', 'NNTP'],
         correctAnswer: 0,
         explanation: 'SMTP (Simple Mail Transfer Protocol) is used for sending/routing emails, while IMAP/POP3 are used for reading them.'
+      },
+      {
+        id: 'smtp-q2',
+        question: 'Which SMTP command signals that the client is ready to send the message headers and body?',
+        options: ['EHLO', 'MAIL FROM', 'RCPT TO', 'DATA'],
+        correctAnswer: 3,
+        explanation: 'DATA tells the server to expect the message content, which ends with a single period line (CRLF.CRLF).'
       }
     ]
   },
@@ -525,6 +662,13 @@ export const APPLICATION_PROTOCOLS: Protocol[] = [
         ],
         correctAnswer: 0,
         explanation: 'FTP divides control traffic (port 21) from bulk file payloads (port 20 or dynamic passive port) to keep commands responsive during large file transfers.'
+      },
+      {
+        id: 'ftp-q2',
+        question: 'In which FTP mode does the client listen on a port and the server connect back to it?',
+        options: ['Passive mode (PASV)', 'Active mode (PORT)', 'Binary mode (TYPE I)', 'ASCII mode (TYPE A)'],
+        correctAnswer: 1,
+        explanation: 'In active mode the client sends a PORT command and the server initiates the data connection back to the client, which often fails behind NAT or firewalls.'
       }
     ]
   },
@@ -536,7 +680,7 @@ export const APPLICATION_PROTOCOLS: Protocol[] = [
     category: 'application',
     osiLayer: 'Application',
     port: 22,
-    rfc: 'RFC 913',
+    rfc: 'SSH-2 File Transfer Protocol (IETF SECSH draft)',
     yearIntroduced: 1997,
     shortSummary: 'Secure, encrypted file transfer and filesystem manipulation protocol running over a single SSH session.',
     description: 'Unlike legacy FTP or FTPS, SFTP is an extension of SSH (Secure Shell) that multiplexes commands, data, and authentication through a single encrypted TCP port 22 tunnel, making it exceptionally firewall-friendly.',
@@ -611,6 +755,13 @@ export const APPLICATION_PROTOCOLS: Protocol[] = [
         options: ['Port 20', 'Port 21', 'Port 22', 'Port 990'],
         correctAnswer: 2,
         explanation: 'SFTP runs as an SSH subsystem over TCP port 22, unlike FTPS which uses ports 990/989.'
+      },
+      {
+        id: 'sftp-q2',
+        question: 'Which SFTP packet does the client send first to begin version negotiation?',
+        options: ['SSH_FXP_INIT', 'SSH_FXP_VERSION', 'SSH_FXP_OPEN', 'SSH_FXP_STATUS'],
+        correctAnswer: 0,
+        explanation: 'The client opens with SSH_FXP_INIT declaring its supported version, and the server answers with SSH_FXP_VERSION.'
       }
     ]
   },
@@ -702,6 +853,13 @@ export const APPLICATION_PROTOCOLS: Protocol[] = [
         ],
         correctAnswer: 0,
         explanation: 'IMAP stores emails on the server, synchronizing reads, deletes, and folders across phones, laptops, and webmail.'
+      },
+      {
+        id: 'imap-q2',
+        question: 'Which IMAP extension lets a client receive new-mail notifications without repeatedly polling?',
+        options: ['IDLE', 'SEARCH', 'FETCH', 'APPEND'],
+        correctAnswer: 0,
+        explanation: 'IDLE (RFC 2177) holds the connection open in a listening state so the server can push updates such as EXISTS as soon as mail arrives.'
       }
     ]
   },
@@ -762,6 +920,22 @@ export const APPLICATION_PROTOCOLS: Protocol[] = [
           summary: 'RETR 1 (2400 octets)',
           payload: { msgNum: 1, subject: 'Welcome to the network', deletedOnServer: true }
         }
+      },
+      {
+        step: 3,
+        title: 'QUIT Commits Deletions (UPDATE State)',
+        description: 'Client ends the session with QUIT, and the server permanently removes every message marked by DELE.',
+        actorSource: 'client',
+        actorTarget: 'server',
+        explanation: 'Messages are only erased when the session enters the UPDATE state, which happens on QUIT and not before.',
+        packetInfo: {
+          id: 'pop3-pkt-3',
+          source: 'Client:54101',
+          destination: 'Server:995',
+          type: 'POP3 Command',
+          summary: 'QUIT -> +OK Bye (3 messages deleted)',
+          payload: { command: 'QUIT', state: 'UPDATE', deletedMessages: 3 }
+        }
       }
     ],
     liveSandboxType: 'generic-simulator',
@@ -777,6 +951,13 @@ export const APPLICATION_PROTOCOLS: Protocol[] = [
         ],
         correctAnswer: 1,
         explanation: 'Standard POP3 downloads messages to the local client and deletes them from the server to free mailbox space.'
+      },
+      {
+        id: 'pop3-q2',
+        question: 'Which port does POP3S (POP3 wrapped in TLS) use by default?',
+        options: ['Port 110', 'Port 143', 'Port 993', 'Port 995'],
+        correctAnswer: 3,
+        explanation: 'POP3S listens on TCP port 995, while plaintext POP3 uses port 110 and IMAPS uses port 993.'
       }
     ]
   },
@@ -837,6 +1018,22 @@ export const APPLICATION_PROTOCOLS: Protocol[] = [
           summary: 'Found cn=John Smith (mail: jsmith@corp.com)',
           payload: { dn: 'cn=John Smith,ou=Dev,dc=corp,dc=com', mail: 'jsmith@corp.com', title: 'Senior Engineer' }
         }
+      },
+      {
+        step: 3,
+        title: 'Unbind Request (Session Teardown)',
+        description: 'Client finishes its directory operations and sends an unbindRequest to end the LDAP session.',
+        actorSource: 'client',
+        actorTarget: 'ldap',
+        explanation: 'unbindRequest has no response; the client simply closes the underlying TCP connection after sending it.',
+        packetInfo: {
+          id: 'ldap-pkt-3',
+          source: 'App:45120',
+          destination: 'LDAP:636',
+          type: 'LDAP unbindRequest',
+          summary: 'unbindRequest (messageID 3)',
+          payload: { messageID: 3, operation: 'unbind', graceful: true }
+        }
       }
     ],
     liveSandboxType: 'generic-simulator',
@@ -847,6 +1044,13 @@ export const APPLICATION_PROTOCOLS: Protocol[] = [
         options: ['Distinguished Name', 'Domain Node', 'Directory Network', 'Digital Namespace'],
         correctAnswer: 0,
         explanation: 'DN stands for Distinguished Name, which uniquely identifies an entry in the LDAP directory tree.'
+      },
+      {
+        id: 'ldap-q2',
+        question: 'Which port does LDAPS (LDAP over TLS) use by default?',
+        options: ['Port 389', 'Port 443', 'Port 636', 'Port 3268'],
+        correctAnswer: 2,
+        explanation: 'LDAPS listens on TCP port 636, while plaintext LDAP and STARTTLS use port 389.'
       }
     ]
   },
@@ -907,6 +1111,22 @@ export const APPLICATION_PROTOCOLS: Protocol[] = [
           summary: 'LOGIN: root | PASS: secret123 (UNENCRYPTED)',
           payload: { cleartextData: 'root\r\nsecret123\r\n', warning: 'Vulnerable to eavesdropping' }
         }
+      },
+      {
+        step: 3,
+        title: 'Terminal-Type Subnegotiation',
+        description: 'Host replies to the TERMINAL-TYPE option with the terminal emulation it will use for the session.',
+        actorSource: 'host',
+        actorTarget: 'client',
+        explanation: 'Subnegotiation is wrapped in IAC SB ... IAC SE, and the host answers SEND with IS "VT100".',
+        packetInfo: {
+          id: 'telnet-pkt-3',
+          source: 'Host:23',
+          destination: 'Client:53420',
+          type: 'Telnet Subnegotiation',
+          summary: 'IAC SB TERMINAL-TYPE IS "VT100" IAC SE',
+          payload: { command: 'IAC SB', option: 'TERMINAL-TYPE', value: 'VT100' }
+        }
       }
     ],
     liveSandboxType: 'generic-simulator',
@@ -922,6 +1142,13 @@ export const APPLICATION_PROTOCOLS: Protocol[] = [
         ],
         correctAnswer: 0,
         explanation: 'Telnet does not encrypt traffic, making passwords and commands easily visible to anyone with a packet sniffer.'
+      },
+      {
+        id: 'telnet-q2',
+        question: 'Which byte value marks the start of a Telnet IAC command sequence?',
+        options: ['0x00', '0x0D', '0x7F', '0xFF'],
+        correctAnswer: 3,
+        explanation: 'The IAC (Interpret As Command) byte is 0xFF, and a literal 0xFF data byte is sent as the escaped pair 0xFF 0xFF.'
       }
     ]
   }

@@ -58,6 +58,22 @@ export const WIRELESS_PROTOCOLS: Protocol[] = [
           summary: 'Message 3/4: PTK Derived, GTK Encrypted (AES-CCMP-256)',
           payload: { ptkDerived: true, keyDescriptorVersion: 'WPA3-SAE' }
         }
+      },
+      {
+        step: 3,
+        title: 'Encrypted QoS Data (A-MPDU) with Block ACK',
+        description: 'Client encrypts QoS Data frames with the derived pairwise key, aggregates them into an A-MPDU, and the AP returns a Block ACK.',
+        actorSource: 'laptop',
+        actorTarget: 'ap',
+        explanation: 'AES-CCMP/GCMP encryption protects each MPDU, and block acknowledgment confirms every subframe without a separate ACK per frame.',
+        packetInfo: {
+          id: 'wifi-pkt-3',
+          source: 'STA (c4:b3:01:..)',
+          destination: 'AP (e0:d5:5e:..)',
+          type: '802.11 QoS Data (A-MPDU)',
+          summary: 'TID: 6 (Voice) | MPDUs: 8 | Length: 31,896 bytes | Block ACK: Received',
+          payload: { cipher: 'GCMP-256', tid: 6, mpduCount: 8, blockAck: true }
+        }
       }
     ],
     liveSandboxType: 'generic-simulator',
@@ -68,6 +84,13 @@ export const WIRELESS_PROTOCOLS: Protocol[] = [
         options: ['CSMA/CD (Collision Detection)', 'CSMA/CA (Collision Avoidance)', 'Token Ring', 'ALOHA'],
         correctAnswer: 1,
         explanation: 'Wi-Fi uses CSMA/CA (Collision Avoidance) with Request to Send / Clear to Send (RTS/CTS) and random backoff.'
+      },
+      {
+        id: 'wifi-q2',
+        question: 'Which frequency band did Wi-Fi 6E add for 802.11ax operation?',
+        options: ['2.4 GHz', '5 GHz', '6 GHz', '60 GHz'],
+        correctAnswer: 2,
+        explanation: 'Wi-Fi 6E extends 802.11ax into the 6 GHz band, which adds up to 1,200 MHz of relatively clean spectrum and many more non-overlapping channels.'
       }
     ]
   },
@@ -128,6 +151,22 @@ export const WIRELESS_PROTOCOLS: Protocol[] = [
           summary: 'AID: A0000000041010 | Cryptogram: TC_9a2f...',
           payload: { responseCode: '9000 (Success)', cryptogramApproved: true }
         }
+      },
+      {
+        step: 3,
+        title: 'Terminal Decision and RF Field Release (DESELECT)',
+        description: 'Reader sends the closing APDU response with status word 9000, then deselects the emulated card and releases the 13.56 MHz field.',
+        actorSource: 'pos',
+        actorTarget: 'phone',
+        explanation: 'The cryptogram is forwarded to the acquirer for authorization while the tap already completes; ISO/IEC 14443-3 DESELECT ends the session cleanly.',
+        packetInfo: {
+          id: 'nfc-pkt-3',
+          source: 'Payment Terminal',
+          destination: 'Phone Secure Element',
+          type: 'APDU Response (Generate AC)',
+          summary: 'SW1SW2: 0x9000 | CID: 0x2F | Terminal Decision: APPROVED',
+          payload: { sw1sw2: '9000', cid: '0x2F', onlineAuthorization: true, fieldReleased: true }
+        }
       }
     ],
     liveSandboxType: 'generic-simulator',
@@ -138,6 +177,13 @@ export const WIRELESS_PROTOCOLS: Protocol[] = [
         options: ['433 MHz', '915 MHz', '13.56 MHz', '2.4 GHz'],
         correctAnswer: 2,
         explanation: 'NFC operates at the globally allocated ISM band frequency of 13.56 MHz.'
+      },
+      {
+        id: 'nfc-q2',
+        question: 'Which NFC operating mode lets a smartphone present itself to a payment terminal as a contactless card?',
+        options: ['Reader/Writer mode', 'Peer-to-Peer mode', 'Card Emulation mode', 'Tag Emulation mode'],
+        correctAnswer: 2,
+        explanation: 'In Card Emulation mode the phone answers ISO/IEC 14443 commands as if it were a smartcard, which is how Apple Pay and Google Pay taps are processed.'
       }
     ]
   },
@@ -199,6 +245,22 @@ export const WIRELESS_PROTOCOLS: Protocol[] = [
           summary: 'Slice: URLLC (SST=2) | Latency Budget: < 5ms',
           payload: { sst: 2, sd: '0x000001', qosFlowId: 1, pduSessionId: 1 }
         }
+      },
+      {
+        step: 3,
+        title: 'Beamformed User-Plane Traffic on the PDU Session',
+        description: 'UE and gNodeB exchange user payload inside QoS Flow 1 using massive MIMO beamforming on the FR1 carrier.',
+        actorSource: 'ue',
+        actorTarget: 'gnb',
+        explanation: 'The UPF anchors the PDU session while SDAP maps each packet to QFI 1, giving the slice its guaranteed bit rate and latency budget.',
+        packetInfo: {
+          id: '5g-pkt-3',
+          source: 'UE (IMSI 310410...)',
+          destination: 'gNodeB (Cell 0042)',
+          type: 'NR User Plane (SDAP/PDCP PDU)',
+          summary: 'QFI: 1 | 5QI: 82 | SSB Beam: 3 | MCS 27 (256-QAM)',
+          payload: { qfi: 1, fiveQi: 82, mcs: 27, modulation: '256-QAM', harqId: 2 }
+        }
       }
     ],
     liveSandboxType: 'generic-simulator',
@@ -209,6 +271,13 @@ export const WIRELESS_PROTOCOLS: Protocol[] = [
         options: ['eMBB (Enhanced Mobile Broadband)', 'URLLC (Ultra-Reliable Low Latency Communications)', 'mMTC (Massive Machine Type)', 'FWA'],
         correctAnswer: 1,
         explanation: 'URLLC is engineered specifically for mission-critical use cases like automated factory robotics and autonomous driving.'
+      },
+      {
+        id: '5g-q2',
+        question: 'Which 5G core network function is responsible for establishing and managing PDU sessions?',
+        options: ['AMF (Access and Mobility Management Function)', 'SMF (Session Management Function)', 'UPF (User Plane Function)', 'NRF (Network Repository Function)'],
+        correctAnswer: 1,
+        explanation: 'The SMF handles PDU session establishment, IP address allocation, and selection of the UPF that carries the user-plane traffic.'
       }
     ]
   },
@@ -269,6 +338,22 @@ export const WIRELESS_PROTOCOLS: Protocol[] = [
           summary: 'CAM Table Match: Port 24 | Latency: 420ns',
           payload: { vlanId: 10, priority: 5 }
         }
+      },
+      {
+        step: 3,
+        title: 'FCS Verification and Frame Discard on CRC Error',
+        description: 'Receiving port recomputes the CRC-32 over the frame, finds it does not match the received FCS, and silently drops the frame.',
+        actorSource: 'server',
+        actorTarget: 'switch',
+        explanation: 'Ethernet has no Layer 2 retransmission, so a frame failing the Frame Check Sequence is discarded and recovery is left to TCP or the application.',
+        packetInfo: {
+          id: 'eth-pkt-3',
+          source: '00:1e:67:89:ab:cd',
+          destination: '00:00:5e:00:53:01',
+          type: 'Ethernet II Frame (FCS Error)',
+          summary: 'Received FCS: 0x7c1e44aa | Computed FCS: 0xa4192b01 | Action: DISCARD',
+          payload: { vlanId: 10, fcsReceived: '0x7c1e44aa', fcsComputed: '0xa4192b01', framesDropped: 1 }
+        }
       }
     ],
     liveSandboxType: 'generic-simulator',
@@ -279,6 +364,13 @@ export const WIRELESS_PROTOCOLS: Protocol[] = [
         options: ['512 bytes', '1500 bytes', '4096 bytes', '9000 bytes'],
         correctAnswer: 1,
         explanation: 'The standard Ethernet payload MTU is 1500 bytes (frames up to 9000 bytes are known as Jumbo Frames).'
+      },
+      {
+        id: 'eth-q2',
+        question: 'Which IEEE standard defines Ethernet VLAN tagging, and what does it insert into the frame?',
+        options: ['802.1Q — a 4-byte tag after the source MAC address', '802.3af — a 2-byte tag before the preamble', '802.1X — an 8-byte tag after the FCS', '802.3ad — no tag, only link aggregation'],
+        correctAnswer: 0,
+        explanation: 'IEEE 802.1Q inserts a 4-byte tag (2-byte TPID 0x8100 plus a 2-byte control field carrying a 12-bit VLAN ID) between the source MAC and EtherType.'
       }
     ]
   }
