@@ -4,10 +4,25 @@ import React, { useState } from 'react';
 import { Terminal, ArrowRight, RefreshCw } from 'lucide-react';
 
 function createIsn(): number {
-  if (typeof crypto !== 'undefined' && 'getRandomValues' in crypto) {
-    return crypto.getRandomValues(new Uint32Array(1))[0] % 1_000_000;
+  const range = 1_000_000;
+  if (typeof crypto !== 'undefined') {
+    if ('randomInt' in crypto && typeof crypto.randomInt === 'function') {
+      return crypto.randomInt(range);
+    }
+    if ('getRandomValues' in crypto) {
+      const maxUint32PlusOne = 0x1_0000_0000;
+      const limit = Math.floor(maxUint32PlusOne / range) * range;
+      const buffer = new Uint32Array(1);
+      while (true) {
+        crypto.getRandomValues(buffer);
+        const value = buffer[0];
+        if (value < limit) {
+          return value % range;
+        }
+      }
+    }
   }
-  return Math.floor(Math.random() * 1_000_000);
+  return Math.floor(Math.random() * range);
 }
 
 export default function TcpSandbox() {
