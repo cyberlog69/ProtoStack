@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
 
   const start = performance.now();
   const allowedHosts = getAllowedTargetHosts();
-  let currentUrl: URL;
+  let currentUrl: string;
 
   try {
     const validated = await validateOutboundUrl(rawUrl, allowedHosts);
@@ -177,7 +177,7 @@ export async function POST(request: NextRequest) {
           status: response.status,
           statusText: response.statusText,
           timeMs,
-          finalUrl: currentUrl.toString(),
+          finalUrl: currentUrl,
           truncated,
           bytes,
           headers: responseHeaders,

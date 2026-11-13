@@ -102,7 +102,7 @@ function isDisallowedHostname(hostname: string): boolean {
 }
 
 export interface ValidatedTarget {
-  url: URL;
+  url: string;
   hostname: string;
   addresses: string[];
 }
@@ -189,7 +189,7 @@ export async function validateOutboundUrl(
   canonical.hash = '';
 
   return {
-    url: canonical,
+    url: canonical.toString(),
     hostname,
     addresses: resolved.map((entry) => entry.address),
   };
