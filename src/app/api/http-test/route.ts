@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { lookup } from 'node:dns/promises';
 
+const ALLOWED_TARGET_HOSTS = new Set<string>([
+  'example.com',
+  'api.example.com',
+]);
+
 function isPrivateOrLocalIPv4(ip: string): boolean {
   const parts = ip.split('.').map((p) => Number(p));
   if (parts.length !== 4 || parts.some((n) => !Number.isInteger(n) || n < 0 || n > 255)) {
@@ -66,6 +71,10 @@ async function validateTargetUrl(rawUrl: string): Promise<string> {
   const hostname = parsed.hostname.toLowerCase();
   if (hostname === 'localhost' || hostname.endsWith('.localhost')) {
     throw new Error('Localhost targets are not allowed.');
+  }
+
+  if (!ALLOWED_TARGET_HOSTS.has(hostname)) {
+    throw new Error('Target host is not allowed.');
   }
 
   const encodedIPv4 = parseNonStandardIPv4(hostname);
