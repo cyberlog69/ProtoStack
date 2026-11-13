@@ -92,7 +92,8 @@ async function validateTargetUrl(rawUrl: string): Promise<string> {
     }
   }
 
-  return parsed.toString();
+  const canonicalUrl = `${parsed.protocol}//${hostname}${parsed.pathname}${parsed.search}${parsed.hash}`;
+  return canonicalUrl;
 }
 
 export async function POST(request: NextRequest) {
@@ -107,6 +108,7 @@ export async function POST(request: NextRequest) {
         ...headers,
       },
       cache: 'no-store',
+      redirect: 'error',
     };
 
     if (body && ['POST', 'PUT', 'PATCH'].includes(method.toUpperCase())) {
