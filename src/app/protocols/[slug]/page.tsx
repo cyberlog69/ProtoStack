@@ -10,9 +10,11 @@ import DnsSandbox from '@/components/sandboxes/DnsSandbox';
 import MqttSandbox from '@/components/sandboxes/MqttSandbox';
 import TcpSandbox from '@/components/sandboxes/TcpSandbox';
 import HttpSandbox from '@/components/sandboxes/HttpSandbox';
+import WebSocketSandbox from '@/components/sandboxes/WebSocketSandbox';
 import GenericSandbox from '@/components/sandboxes/GenericSandbox';
 import QuizSection from '@/components/QuizSection';
-import { ArrowLeft, ArrowRight, BookOpen, Activity, Terminal, Shield, Check, X, Layers, Cpu, Globe } from 'lucide-react';
+import { useProgress } from '@/context/ProgressContext';
+import { ArrowLeft, ArrowRight, BookOpen, Activity, Terminal, Shield, Check, X, Layers, Cpu, Globe, Bookmark, CheckCircle2 } from 'lucide-react';
 
 export default function ProtocolDetailPage() {
   const params = useParams();
@@ -20,10 +22,14 @@ export default function ProtocolDetailPage() {
 
   const protocolIndex = PROTOCOLS.findIndex((p) => p.slug === slug);
   const protocol = PROTOCOLS[protocolIndex];
+  const { toggleLearned, toggleBookmark, isLearned, isBookmarked } = useProgress();
 
   if (!protocol) {
     notFound();
   }
+
+  const learned = isLearned(protocol.id);
+  const bookmarked = isBookmarked(protocol.id);
 
   const prevProtocol = protocolIndex > 0 ? PROTOCOLS[protocolIndex - 1] : null;
   const nextProtocol = protocolIndex < PROTOCOLS.length - 1 ? PROTOCOLS[protocolIndex + 1] : null;
@@ -41,6 +47,8 @@ export default function ProtocolDetailPage() {
         return <TcpSandbox />;
       case 'http-client':
         return <HttpSandbox />;
+      case 'websocket-chat':
+        return <WebSocketSandbox />;
       default:
         return <GenericSandbox protocol={protocol} />;
     }
@@ -58,8 +66,34 @@ export default function ProtocolDetailPage() {
           <span>Back to all protocols</span>
         </Link>
 
-        {/* Quick Prev / Next Navigator */}
+        {/* Quick Prev / Next Navigator & Actions */}
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => toggleBookmark(protocol.id)}
+            className={`px-3 py-1.5 rounded-lg border text-xs font-mono flex items-center gap-1.5 transition-all ${
+              bookmarked
+                ? 'bg-amber-500/20 text-amber-300 border-amber-500/50'
+                : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+            }`}
+            title="Bookmark this protocol"
+          >
+            <Bookmark className={`w-3.5 h-3.5 ${bookmarked ? 'fill-current' : ''}`} />
+            <span>{bookmarked ? 'Bookmarked' : 'Bookmark'}</span>
+          </button>
+
+          <button
+            onClick={() => toggleLearned(protocol.id)}
+            className={`px-3 py-1.5 rounded-lg border text-xs font-mono flex items-center gap-1.5 transition-all ${
+              learned
+                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50'
+                : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+            }`}
+            title="Mark as learned"
+          >
+            <CheckCircle2 className={`w-3.5 h-3.5 ${learned ? 'text-emerald-400' : ''}`} />
+            <span>{learned ? 'Learned' : 'Mark Learned'}</span>
+          </button>
+
           {prevProtocol && (
             <Link
               href={`/protocols/${prevProtocol.slug}`}

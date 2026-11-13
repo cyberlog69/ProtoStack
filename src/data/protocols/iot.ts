@@ -631,6 +631,229 @@ export const IOT_PROTOCOLS: Protocol[] = [
         explanation: 'GATT defines how two BLE devices transfer data using Services, Characteristics, and Descriptors.'
       }
     ]
+  },
+  {
+    id: 'zwave',
+    slug: 'zwave',
+    name: 'Z-Wave',
+    fullName: 'Z-Wave Wireless Protocol',
+    category: 'iot',
+    osiLayer: 'Network',
+    port: 'Sub-GHz (908.42 MHz US / 868.42 MHz EU)',
+    rfc: 'ITU-T G.9959',
+    yearIntroduced: 2001,
+    shortSummary: 'Sub-gigahertz low-power mesh networking protocol engineered specifically for smart home automation.',
+    description: 'Z-Wave operates in the sub-1GHz frequency band, completely avoiding the crowded 2.4 GHz spectrum used by Wi-Fi and Bluetooth. Every mains-powered Z-Wave device acts as a mesh repeater, allowing smart locks, light switches, and thermostats to route commands through up to 4 hops.',
+    keyFeatures: [
+      'Sub-GHz frequency band eliminates Wi-Fi and microwave interference',
+      'Mesh networking topology supporting up to 232 nodes per network',
+      'Security 2 (S2) framework with Elliptic Curve Diffie-Hellman (ECDH) encryption',
+      'Strict Z-Wave Alliance certification ensuring interoperability across vendors'
+    ],
+    useCases: ['Smart deadbolts and keyless door locks', 'Smart home wall switches and dimmers', 'Security window/door sensors and water leak detectors'],
+    pros: ['Zero interference from 2.4 GHz Wi-Fi', 'High penetration through walls and floors due to longer wavelength'],
+    cons: ['Limited bandwidth (100 kbps)', 'Requires a dedicated Z-Wave USB stick or bridge hub'],
+    actors: [
+      { id: 'hub', label: 'Z-Wave Gateway Hub', icon: 'Radio', color: '#6366f1' },
+      { id: 'switch', label: 'Repeater Light Switch', icon: 'Cpu', color: '#06b6d4' },
+      { id: 'lock', label: 'Smart Deadbolt', icon: 'ShieldCheck', color: '#10b981' }
+    ],
+    interactiveSteps: [
+      {
+        step: 1,
+        title: 'Hub Dispatches Routed Command',
+        description: 'Gateway sends an S2-encrypted command to lock the front door via repeater switch.',
+        actorSource: 'hub',
+        actorTarget: 'switch',
+        explanation: 'Mesh frame contains source node 1, destination node 5, routed through repeater node 2.',
+        packetInfo: {
+          id: 'zw-pkt-1',
+          source: 'Hub (Node 1)',
+          destination: 'Repeater (Node 2)',
+          type: 'Z-Wave Routed Frame',
+          summary: 'Route: 1 -> 2 -> 5 | Cmd: COMMAND_CLASS_DOOR_LOCK',
+          payload: { homeId: '0x01FA94B', sourceNode: 1, targetNode: 5, hopsRemaining: 1 }
+        }
+      },
+      {
+        step: 2,
+        title: 'Repeater Forwards to Deadbolt',
+        description: 'Mains-powered switch retransmits the RF packet on sub-GHz band directly to deadbolt.',
+        actorSource: 'switch',
+        actorTarget: 'lock',
+        explanation: 'Deadbolt wakes up, decrypts S2 payload, engages motor, and returns ACK to hub.',
+        packetInfo: {
+          id: 'zw-pkt-2',
+          source: 'Repeater (Node 2)',
+          destination: 'Deadbolt (Node 5)',
+          type: 'Z-Wave S2 Encrypted',
+          summary: 'DOOR_LOCK_OPERATION_SET (0xFF = SECURED)',
+          payload: { command: 'DOOR_LOCK_OPERATION_SET', status: 'SECURED', ack: true }
+        }
+      }
+    ],
+    liveSandboxType: 'generic-simulator',
+    quiz: [
+      {
+        id: 'zw-q1',
+        question: 'Why does Z-Wave experience virtually zero interference from Wi-Fi routers and Bluetooth headsets?',
+        options: [
+          'It operates in the sub-1GHz radio spectrum instead of the 2.4 GHz band',
+          'It uses physical fiber optic cables',
+          'It uses quantum encryption',
+          'It only operates when Wi-Fi is turned off'
+        ],
+        correctAnswer: 0,
+        explanation: 'Z-Wave uses sub-GHz frequencies (e.g., 908.42 MHz in North America, 868.42 MHz in Europe), avoiding the congested 2.4 GHz Wi-Fi spectrum.'
+      }
+    ]
+  },
+  {
+    id: 'canbus',
+    slug: 'canbus',
+    name: 'CAN Bus',
+    fullName: 'Controller Area Network',
+    category: 'iot',
+    osiLayer: 'Data Link',
+    port: 'Differential Twisted Pair (CAN_H / CAN_L)',
+    rfc: 'ISO 11898-1',
+    yearIntroduced: 1986,
+    shortSummary: 'High-integrity, message-based differential serial bus for automotive electronic control units (ECUs).',
+    description: 'CAN Bus was developed by Robert Bosch to connect automotive ECUs (Engine Control Unit, ABS, Airbags, Transmission) without complex point-to-point wiring harnesses. It uses differential signaling on two wires (CAN_H and CAN_L) and deterministic non-destructive bitwise arbitration.',
+    keyFeatures: [
+      'Differential voltage signaling (2.5V recessive, 3.5V/1.5V dominant)',
+      'Non-destructive bitwise message priority arbitration (lower identifier = higher priority)',
+      'Built-in CRC error detection, frame check, and automatic error confinement',
+      'CAN FD (Flexible Data-Rate) supporting payloads up to 64 bytes and 5 Mbps'
+    ],
+    useCases: ['Automotive internal ECU communication (engine, brakes, steering)', 'Heavy equipment and avionics (CANopen, J1939)', 'Medical robotics and industrial automation'],
+    pros: ['Immune to extreme electrical noise in vehicle engines', 'Deterministic priority ensures life-critical messages like ABS fire first'],
+    cons: ['Inherently lacks built-in authentication or encryption in base CAN (vulnerable to OBD-II port hacking)'],
+    actors: [
+      { id: 'brakes', label: 'ABS / Brake ECU', icon: 'Cpu', color: '#ef4444' },
+      { id: 'bus', label: 'CAN Twisted Pair Bus', icon: 'Network', color: '#6366f1' },
+      { id: 'cluster', label: 'Dashboard Gauge Cluster', icon: 'Laptop', color: '#10b981' }
+    ],
+    interactiveSteps: [
+      {
+        step: 1,
+        title: 'Bitwise Arbitration Phase (SOF + ID)',
+        description: 'ECUs broadcast simultaneously. ABS ECU transmits high-priority ID 0x0C0 (dominant zero wins).',
+        actorSource: 'brakes',
+        actorTarget: 'bus',
+        explanation: 'The lower numerical CAN ID wins arbitration without losing a single clock cycle of bus throughput.',
+        packetInfo: {
+          id: 'can-pkt-1',
+          source: 'ECU_ABS',
+          destination: 'CAN_BUS',
+          type: 'CAN 2.0A Frame',
+          summary: 'ID: 0x0C0 (High Priority) | DLC: 8 | Wheel Speed 65 km/h',
+          payload: { canId: '0x0C0', priority: 'CRITICAL', dlc: 8, data: '0x41 0x2A 0x00 0x00' }
+        }
+      },
+      {
+        step: 2,
+        title: 'Differential Signal Delivery & ACK',
+        description: 'All nodes on the bus sample the differential voltage and dominant ACK bit confirms receipt.',
+        actorSource: 'bus',
+        actorTarget: 'cluster',
+        explanation: 'Dashboard cluster displays speedometer reading and illuminates ABS indicator if slip is detected.',
+        packetInfo: {
+          id: 'can-pkt-2',
+          source: 'CAN_BUS',
+          destination: 'Cluster',
+          type: 'CAN Data Received',
+          summary: 'Speedometer updated: 65 km/h',
+          payload: { speedKmh: 65, absActive: false, crcStatus: 'VALID_15BIT_CRC' }
+        }
+      }
+    ],
+    liveSandboxType: 'generic-simulator',
+    quiz: [
+      {
+        id: 'can-q1',
+        question: 'When two CAN bus nodes transmit at the exact same moment, how is collision resolved?',
+        options: [
+          'Bitwise arbitration where dominant "0" bits overwrite recessive "1" bits (lower CAN ID wins)',
+          'Both nodes back off randomly like CSMA/CD',
+          'The node with the higher MAC address wins',
+          'The master clock controller picks a node'
+        ],
+        correctAnswer: 0,
+        explanation: 'In CAN bus arbitration, dominant "0" bits override recessive "1" bits on the wire, so the message with the lowest identifier transmits without interruption.'
+      }
+    ]
+  },
+  {
+    id: 'bacnet',
+    slug: 'bacnet',
+    name: 'BACnet',
+    fullName: 'Building Automation and Control Networks',
+    category: 'iot',
+    osiLayer: 'Application',
+    port: '47808 (0xBAC0)',
+    rfc: 'ISO 16484-5 / ANSI/ASHRAE 135',
+    yearIntroduced: 1995,
+    shortSummary: 'Universal data communication protocol for commercial building automation, HVAC, lighting, and fire systems.',
+    description: 'BACnet is the worldwide standard protocol engineered specifically for building management systems (BMS). It models smart buildings as standardized collections of objects (Analog Input for temperature, Binary Output for fans, Schedules) communicating over BACnet/IP (UDP 47808) or MS/TP.',
+    keyFeatures: [
+      'Standardized Object and Property model (Analog Input, Binary Output, Multi-state, Schedule)',
+      'BACnet/IP over UDP port 47808 (hex 0xBAC0)',
+      'Who-Is and I-Am device discovery broadcast services',
+      'BACnet/SC (Secure Connect) using TLS and WebSockets for modern cybersecurity'
+    ],
+    useCases: ['Skyscraper central HVAC chiller and thermostat regulation', 'Commercial smart lighting and occupancy sensor automation', 'Hospital critical airflow and emergency generator monitoring'],
+    pros: ['Prevents proprietary vendor lock-in across chillers, air handlers, and lighting', 'Rich domain-specific building automation semantics'],
+    cons: ['Legacy BACnet/IP broadcast traffic requires BBMD routers to traverse subnets and lacks encryption without BACnet/SC'],
+    actors: [
+      { id: 'bms', label: 'Central BMS Workstation', icon: 'Laptop', color: '#6366f1' },
+      { id: 'hvac', label: 'Rooftop Chiller / Air Handler', icon: 'Cpu', color: '#10b981' }
+    ],
+    interactiveSteps: [
+      {
+        step: 1,
+        title: 'BACnet Device Discovery (Who-Is / I-Am)',
+        description: 'BMS workstation broadcasts Who-Is on UDP 47808. Chiller controller responds with I-Am.',
+        actorSource: 'bms',
+        actorTarget: 'hvac',
+        explanation: 'Discovery establishes Device ID, Vendor ID (Johnson Controls, Siemens, Honeywell), and BACnet version.',
+        packetInfo: {
+          id: 'bac-pkt-1',
+          source: 'BMS:47808',
+          destination: '255.255.255.255:47808',
+          type: 'BACnet Who-Is Broadcast',
+          summary: 'Who-Is Device Range 1 to 999999',
+          payload: { service: 'Who-Is', lowLimit: 1, highLimit: 999999 }
+        }
+      },
+      {
+        step: 2,
+        title: 'ReadProperty Request (Temperature Sensor)',
+        description: 'BMS queries Analog Input #1 (Chilled Water Supply Temperature).',
+        actorSource: 'bms',
+        actorTarget: 'hvac',
+        explanation: 'HVAC controller returns present-value property: 44.5 degrees Fahrenheit.',
+        packetInfo: {
+          id: 'bac-pkt-2',
+          source: 'BMS',
+          destination: 'ChillerController',
+          type: 'BACnet ReadProperty-ACK',
+          summary: 'Analog-Input #1 present-value: 44.5 °F',
+          payload: { objectType: 'analog-input', objectInstance: 1, property: 'present-value', value: 44.5, units: 'degrees-fahrenheit' }
+        }
+      }
+    ],
+    liveSandboxType: 'generic-simulator',
+    quiz: [
+      {
+        id: 'bac-q1',
+        question: 'Which default UDP port does BACnet/IP use for building automation packets?',
+        options: ['Port 47808 (hex 0xBAC0)', 'Port 80', 'Port 502', 'Port 1883'],
+        correctAnswer: 0,
+        explanation: 'BACnet/IP uses UDP port 47808, chosen because its hexadecimal representation is 0xBAC0.'
+      }
+    ]
   }
 ];
+
 

@@ -27,23 +27,38 @@ export default function HttpSandbox() {
     }
   });
 
-  const handleSend = () => {
-    setResponse({
-      status: method === 'POST' ? 201 : 200,
-      statusText: method === 'POST' ? 'Created' : 'OK',
-      timeMs: Math.floor(Math.random() * 40) + 18,
-      headers: {
-        'content-type': 'application/json; charset=utf-8',
-        'cache-control': 'no-cache',
-        'x-request-method': method,
-        'server': 'protostack-edge/1.0'
-      },
-      body: {
-        message: `HTTP ${method} execution completed successfully.`,
-        executedAt: new Date().toISOString(),
-        requestUrl: url
-      }
-    });
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSend = async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/http-test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url, method }),
+      });
+      const data = await res.json();
+      setResponse(data);
+    } catch {
+      setResponse({
+        status: method === 'POST' ? 201 : 200,
+        statusText: method === 'POST' ? 'Created' : 'OK',
+        timeMs: Math.floor(Math.random() * 30) + 15,
+        headers: {
+          'content-type': 'application/json; charset=utf-8',
+          'cache-control': 'no-cache',
+          'x-request-method': method,
+          'server': 'protostack-edge/1.0'
+        },
+        body: {
+          message: `HTTP ${method} execution completed successfully.`,
+          executedAt: new Date().toISOString(),
+          requestUrl: url
+        }
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

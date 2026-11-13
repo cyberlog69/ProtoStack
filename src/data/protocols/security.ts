@@ -281,6 +281,186 @@ export const SECURITY_PROTOCOLS: Protocol[] = [
         explanation: 'PKCE (Proof Key for Code Exchange) creates a dynamic cryptographic verifier that prevents attackers from redeeming stolen authorization codes.'
       }
     ]
+  },
+  {
+    id: 'kerberos',
+    slug: 'kerberos',
+    name: 'Kerberos',
+    fullName: 'Kerberos Network Authentication Protocol',
+    category: 'security',
+    osiLayer: 'Application',
+    port: 88,
+    rfc: 'RFC 4120',
+    yearIntroduced: 1988,
+    shortSummary: 'Ticket-based symmetric key authentication protocol providing mutual authentication over unsecure networks.',
+    description: 'Kerberos is the default authentication protocol for Microsoft Active Directory and enterprise domains. It uses trusted third-party Key Distribution Centers (KDC) to issue cryptographic Ticket Granting Tickets (TGT) and service tickets, preventing passwords from ever traveling over the wire.',
+    keyFeatures: [
+      'Key Distribution Center (KDC) with Authentication Server (AS) and Ticket Granting Server (TGS)',
+      'Ticket Granting Ticket (TGT) mechanism for single sign-on without re-entering credentials',
+      'Mutual authentication (client verifies server, and server verifies client)',
+      'Timestamp-based replay protection (strict clock skew requirement <= 5 minutes)'
+    ],
+    useCases: ['Windows Active Directory corporate logon', 'Enterprise single sign-on (SSO) to intranet file shares (SMB/CIFS)', 'Hadoop cluster distributed authentication'],
+    pros: ['Passwords never cross the network in any form', 'Single sign-on across thousands of domain services'],
+    cons: ['KDC represents a single point of failure without clustering', 'Strict dependence on synchronized time via NTP'],
+    actors: [
+      { id: 'client', label: 'Workstation Client', icon: 'Laptop', color: '#6366f1' },
+      { id: 'kdc', label: 'Key Distribution Center (KDC)', icon: 'ShieldCheck', color: '#f59e0b' },
+      { id: 'service', label: 'File Server / Intranet', icon: 'Server', color: '#10b981' }
+    ],
+    interactiveSteps: [
+      {
+        step: 1,
+        title: 'AS Request & TGT Issuance (KRB_AS_REQ / REP)',
+        description: 'Client sends timestamp encrypted with password hash to KDC. KDC responds with Ticket Granting Ticket (TGT).',
+        actorSource: 'client',
+        actorTarget: 'kdc',
+        explanation: 'The KDC validates credentials and returns a TGT encrypted with the KDC secret key (krbtgt).',
+        packetInfo: {
+          id: 'krb-pkt-1',
+          source: 'Workstation:51088',
+          destination: 'KDC:88',
+          type: 'KRB_AS_REP',
+          summary: 'TGT issued for user@CORP.LOCAL',
+          payload: { principal: 'alice@CORP.LOCAL', tgt: '[Encrypted with krbtgt key]', sessionKey: '0x99a1b4...' }
+        }
+      },
+      {
+        step: 2,
+        title: 'Service Ticket Request (KRB_TGS_REQ / REP)',
+        description: 'Client presents TGT to Ticket Granting Server to request access to the file share service.',
+        actorSource: 'client',
+        actorTarget: 'kdc',
+        explanation: 'KDC decrypts TGT and returns a Service Ticket encrypted with the file server secret key.',
+        packetInfo: {
+          id: 'krb-pkt-2',
+          source: 'Workstation',
+          destination: 'KDC:88',
+          type: 'KRB_TGS_REP',
+          summary: 'Service Ticket for cifs/fileserver.corp.local',
+          payload: { spn: 'cifs/fileserver.corp.local', ticket: '[Encrypted with Server key]' }
+        }
+      },
+      {
+        step: 3,
+        title: 'Mutual Service Authentication (KRB_AP_REQ / REP)',
+        description: 'Client presents Service Ticket + Authenticator to target file server.',
+        actorSource: 'client',
+        actorTarget: 'service',
+        explanation: 'File server decrypts ticket using its machine secret and confirms identity, granting access.',
+        packetInfo: {
+          id: 'krb-pkt-3',
+          source: 'Workstation',
+          destination: 'FileServer:445',
+          type: 'KRB_AP_REQ',
+          summary: 'Mutual Auth Successful -> Access Granted',
+          payload: { access: 'GRANTEE_READ_WRITE', mutualAuth: true }
+        }
+      }
+    ],
+    liveSandboxType: 'generic-simulator',
+    quiz: [
+      {
+        id: 'krb-q1',
+        question: 'What happens in Kerberos if client and KDC system clocks drift apart by more than 5 minutes?',
+        options: [
+          'Authentication fails due to timestamp replay protection',
+          'Traffic falls back to Telnet',
+          'Encryption key is regenerated',
+          'Password complexity requirement increases'
+        ],
+        correctAnswer: 0,
+        explanation: 'Kerberos relies heavily on timestamps in authenticators to prevent replay attacks; clock skew exceeding 5 minutes causes authentication to be rejected.'
+      }
+    ]
+  },
+  {
+    id: 'saml',
+    slug: 'saml',
+    name: 'SAML 2.0',
+    fullName: 'Security Assertion Markup Language 2.0',
+    category: 'security',
+    osiLayer: 'Application',
+    port: '443 (HTTPS)',
+    rfc: 'OASIS Standard',
+    yearIntroduced: 2005,
+    shortSummary: 'XML-based open standard for exchanging authentication and authorization data between identity providers and service providers.',
+    description: 'SAML 2.0 is the enterprise standard for web browser Single Sign-On (SSO). It allows an Identity Provider (Okta, Azure AD, Ping) to issue cryptographically signed XML assertions verifying a user identity to a cloud SaaS Service Provider (Salesforce, Google Workspace, Slack).',
+    keyFeatures: [
+      'Role separation: Identity Provider (IdP) and Service Provider (SP)',
+      'XML-encoded security assertions signed with X.509 certificates',
+      'SP-Initiated and IdP-Initiated browser redirect / POST binding flows',
+      'Attribute statements transmitting roles, groups, and department metadata'
+    ],
+    useCases: ['Enterprise SSO for corporate SaaS applications (Slack, Workday, Zoom)', 'Cross-domain identity federation between partner companies'],
+    pros: ['Eliminates separate user passwords for hundreds of corporate cloud applications', 'Centralized IT deprovisioning instantly locks out former employees'],
+    cons: ['Verbose XML payloads with complex XML Signature (XMLDSIG) vulnerabilities if parsers are misconfigured'],
+    actors: [
+      { id: 'user', label: 'User Browser', icon: 'Laptop', color: '#6366f1' },
+      { id: 'sp', label: 'SaaS App (Service Provider)', icon: 'Globe', color: '#10b981' },
+      { id: 'idp', label: 'Identity Provider (Okta / Azure AD)', icon: 'ShieldCheck', color: '#f59e0b' }
+    ],
+    interactiveSteps: [
+      {
+        step: 1,
+        title: 'SP-Initiated SAML AuthnRequest',
+        description: 'User attempts to access SaaS app. SaaS app redirects browser to corporate IdP with encoded AuthnRequest.',
+        actorSource: 'sp',
+        actorTarget: 'idp',
+        explanation: 'Browser navigates to IdP login URL containing HTTP-Redirect SAMLRequest parameter.',
+        packetInfo: {
+          id: 'saml-pkt-1',
+          source: 'SaaS App',
+          destination: 'IdP:443',
+          type: 'SAMLRequest (AuthnRequest)',
+          summary: 'AuthnRequest for issuer "https://saas.app.com/saml"',
+          payload: { issuer: 'https://saas.app.com/saml', binding: 'HTTP-POST' }
+        }
+      },
+      {
+        step: 2,
+        title: 'IdP Authenticates User & Signs Assertion',
+        description: 'User logs in via MFA at IdP. IdP generates signed XML assertion containing user email and groups.',
+        actorSource: 'idp',
+        actorTarget: 'user',
+        explanation: 'IdP returns auto-submitting HTML form with base64-encoded SAMLResponse to the user browser.',
+        packetInfo: {
+          id: 'saml-pkt-2',
+          source: 'IdP',
+          destination: 'Browser',
+          type: 'SAMLResponse (Signed XML)',
+          summary: 'SAMLResponse containing signed NameID=alice@corp.com',
+          payload: { nameId: 'alice@corp.com', signature: 'RSA-SHA256 Valid', groups: ['Engineering', 'Admins'] }
+        }
+      },
+      {
+        step: 3,
+        title: 'Browser POSTs Assertion to SP (Assertion Consumer Service)',
+        description: 'Browser auto-posts SAMLResponse to SaaS ACS URL. SaaS app verifies signature and logs user in.',
+        actorSource: 'user',
+        actorTarget: 'sp',
+        explanation: 'Service Provider verifies IdP X.509 public key signature and creates authenticated application session.',
+        packetInfo: {
+          id: 'saml-pkt-3',
+          source: 'Browser',
+          destination: 'SaaS App/acs',
+          type: 'HTTP POST (ACS)',
+          summary: 'HTTP 302 Found -> Authenticated Dashboard',
+          payload: { status: 'Success', sessionCookie: 'Set-Cookie: session_id=xyz987' }
+        }
+      }
+    ],
+    liveSandboxType: 'generic-simulator',
+    quiz: [
+      {
+        id: 'saml-q1',
+        question: 'In SAML SSO, what format is used to encode the security assertions and signatures?',
+        options: ['XML', 'JSON', 'YAML', 'Protocol Buffers'],
+        correctAnswer: 0,
+        explanation: 'SAML 2.0 uses structured XML documents and XML Digital Signatures (XMLDSIG) to communicate identity assertions.'
+      }
+    ]
   }
 ];
+
 

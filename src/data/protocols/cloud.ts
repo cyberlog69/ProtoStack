@@ -217,6 +217,277 @@ export const CLOUD_PROTOCOLS: Protocol[] = [
         explanation: 'The dollar sign `$` denotes a bulk string and is followed by the byte length (e.g. `$5\\r\\nhello\\r\\n`).'
       }
     ]
+  },
+  {
+    id: 'webrtc',
+    slug: 'webrtc',
+    name: 'WebRTC',
+    fullName: 'Web Real-Time Communication',
+    category: 'cloud',
+    osiLayer: 'Application',
+    port: 'Dynamic UDP (ICE / STUN / TURN)',
+    rfc: 'RFC 8825 - RFC 8835 / W3C Recommendation',
+    yearIntroduced: 2011,
+    shortSummary: 'Peer-to-peer real-time audio, video, and arbitrary binary data streaming directly between web browsers without plugins.',
+    description: 'WebRTC enables sub-second latency peer-to-peer audio, video, and data communication directly between browsers and mobile devices. It leverages SDP (Session Description Protocol) for offer/answer signaling, STUN/TURN for NAT traversal, and SRTP/SCTP for encrypted media and data channels.',
+    keyFeatures: [
+      'Peer-to-peer direct audio/video streaming via SRTP (Secure Real-time Transport Protocol)',
+      'RTCDataChannel for bidirectional, low-latency binary and text transmission over SCTP/DTLS',
+      'ICE (Interactive Connectivity Establishment) with STUN and TURN for NAT and firewall traversal',
+      'Adaptive bitrate and jitter buffer management tailored for unstable mobile networks'
+    ],
+    useCases: ['Google Meet, Discord, and Zoom browser video conferences', 'Cloud gaming streaming (GeForce Now, Xbox Cloud)', 'Browser-to-browser P2P file sharing'],
+    pros: ['Ultra-low latency (<200ms glass-to-glass)', 'Encrypted by default via DTLS and SRTP', 'Native browser API without third-party plugins'],
+    cons: ['P2P mesh topology does not scale past 4–6 participants without a Selective Forwarding Unit (SFU) media server'],
+    actors: [
+      { id: 'peerA', label: 'Peer A (Caller)', icon: 'Laptop', color: '#6366f1' },
+      { id: 'stun', label: 'STUN / TURN Server', icon: 'Globe', color: '#f59e0b' },
+      { id: 'peerB', label: 'Peer B (Callee)', icon: 'Laptop', color: '#10b981' }
+    ],
+    interactiveSteps: [
+      {
+        step: 1,
+        title: 'ICE Candidate Gathering via STUN',
+        description: 'Peer A queries STUN server to discover its public IP and reflexive UDP port mapping.',
+        actorSource: 'peerA',
+        actorTarget: 'stun',
+        explanation: 'STUN server inspects the incoming packet and echoes back the public socket 203.0.113.19:54120.',
+        packetInfo: {
+          id: 'webrtc-pkt-1',
+          source: 'PeerA (Private: 192.168.1.5:40000)',
+          destination: 'STUN (stun.l.google.com:19302)',
+          type: 'STUN Binding Request',
+          summary: 'Discover reflexive public IP/port candidate',
+          payload: { transactionId: '0x81bfa094', reflexiveCandidate: '203.0.113.19:54120' }
+        }
+      },
+      {
+        step: 2,
+        title: 'SDP Offer / Answer Signaling Exchange',
+        description: 'Peers exchange Session Description Protocol (SDP) payloads containing codecs (Opus, VP9) and ICE candidates.',
+        actorSource: 'peerA',
+        actorTarget: 'peerB',
+        explanation: 'Signaling server relays the SDP offer; Peer B generates and returns an SDP answer.',
+        packetInfo: {
+          id: 'webrtc-pkt-2',
+          source: 'PeerA',
+          destination: 'PeerB',
+          type: 'SDP Offer (Signaling)',
+          summary: 'SDP: Audio(Opus/48000), Video(VP9/90000), DTLS Fingerprint',
+          payload: { codecs: ['VP9', 'Opus'], iceCandidatesCount: 4, dtlsRole: 'actpass' }
+        }
+      },
+      {
+        step: 3,
+        title: 'DTLS Handshake & SRTP Media P2P Stream',
+        description: 'Direct P2P connection established. Audio and video frames stream encrypted via SRTP.',
+        actorSource: 'peerA',
+        actorTarget: 'peerB',
+        explanation: 'Keys are derived through DTLS-SRTP. Media streams directly between peers without touching any web server.',
+        packetInfo: {
+          id: 'webrtc-pkt-3',
+          source: 'PeerA:54120',
+          destination: 'PeerB:51020',
+          type: 'SRTP Media Stream',
+          summary: '1080p 60fps VP9 Video Stream (Latency: 42ms)',
+          payload: { stream: 'webrtc-video-track', fps: 60, resolution: '1920x1080', latencyMs: 42 }
+        }
+      }
+    ],
+    liveSandboxType: 'generic-simulator',
+    quiz: [
+      {
+        id: 'webrtc-q1',
+        question: 'What is the role of a STUN server in establishing a WebRTC peer connection?',
+        options: [
+          'It tells a peer what its public IP address and port mapping are behind NAT',
+          'It stores and records video calls on disk',
+          'It renders 3D graphics in the browser',
+          'It generates SSL certificates'
+        ],
+        correctAnswer: 0,
+        explanation: 'STUN (Session Traversal Utilities for NAT) allows a client behind a router/NAT to discover its public IP address and port to share with peers.'
+      }
+    ]
+  },
+  {
+    id: 'nats',
+    slug: 'nats',
+    name: 'NATS',
+    fullName: 'NATS Messaging System',
+    category: 'cloud',
+    osiLayer: 'Application',
+    port: 4222,
+    rfc: 'Cloud Native Computing Foundation (CNCF)',
+    yearIntroduced: 2010,
+    shortSummary: 'High-performance, cloud-native pub/sub and distributed messaging system written in Go.',
+    description: 'NATS is a CNCF graduated project engineered for high velocity, low latency microservices communication. It features an ultra-simple text protocol (PUB, SUB, MSG, +OK) achieving millions of messages per second with microsecond latencies, alongside JetStream for distributed persistence and deduplication.',
+    keyFeatures: [
+      'Simple ASCII wire protocol (PUB, SUB, MSG, PING, PONG)',
+      'Core publish/subscribe, request-reply, and load-balanced queue groups',
+      'JetStream persistence engine with stream deduplication and consumer acknowledgments',
+      'Multi-cluster superclusters and leaf nodes for edge-to-cloud topologies'
+    ],
+    useCases: ['Kubernetes cloud-native microservice telemetry', 'Edge computing and IoT gateway message dispatching', 'Ultra-low latency financial market event buses'],
+    pros: ['Blazing fast throughput (over 10 million msgs/sec per server) with sub-millisecond latencies', 'Single lightweight Go binary with zero external dependencies'],
+    cons: ['Core NATS provides at-most-once delivery (requires JetStream for persistent guaranteed delivery)'],
+    actors: [
+      { id: 'publisher', label: 'Payment Microservice', icon: 'Laptop', color: '#6366f1' },
+      { id: 'broker', label: 'NATS Server (JetStream)', icon: 'Server', color: '#06b6d4' },
+      { id: 'consumer', label: 'Fraud Detection Worker', icon: 'Database', color: '#10b981' }
+    ],
+    interactiveSteps: [
+      {
+        step: 1,
+        title: 'NATS Queue Subscription (SUB payments.* workers)',
+        description: 'Fraud worker connects and registers a queue group subscription to distribute load.',
+        actorSource: 'consumer',
+        actorTarget: 'broker',
+        explanation: 'Worker sends `SUB payments.* workers 1\\r\\n`. Multiple workers sharing the group receive load-balanced messages.',
+        packetInfo: {
+          id: 'nats-pkt-1',
+          source: 'Worker:51200',
+          destination: 'NATS:4222',
+          type: 'NATS SUB Command',
+          summary: 'SUB payments.* queue:workers sid:1',
+          payload: { subject: 'payments.*', queueGroup: 'workers', sid: '1' }
+        }
+      },
+      {
+        step: 2,
+        title: 'High-Velocity Publish (PUB)',
+        description: 'Payment service publishes a 48-byte JSON transaction to `payments.usd`.',
+        actorSource: 'publisher',
+        actorTarget: 'broker',
+        explanation: 'Wire format: `PUB payments.usd 48\\r\\n{"tx":"tx_9981","amount":250.00,"currency":"USD"}\\r\\n`.',
+        packetInfo: {
+          id: 'nats-pkt-2',
+          source: 'PaymentApp:54310',
+          destination: 'NATS:4222',
+          type: 'NATS PUB Command',
+          summary: 'PUB payments.usd 48 bytes',
+          payload: { subject: 'payments.usd', bytes: 48, data: '{"tx":"tx_9981","amount":250.00,"currency":"USD"}' }
+        }
+      },
+      {
+        step: 3,
+        title: 'NATS Dispatches MSG to Worker',
+        description: 'NATS routes the message to one worker in the queue group within 30 microseconds.',
+        actorSource: 'broker',
+        actorTarget: 'consumer',
+        explanation: 'Server sends `MSG payments.usd 1 48\\r\\n...` directly to the consumer socket.',
+        packetInfo: {
+          id: 'nats-pkt-3',
+          source: 'NATS:4222',
+          destination: 'Worker:51200',
+          type: 'NATS MSG Delivery',
+          summary: 'MSG payments.usd 1 48 (Dispatched in 28μs)',
+          payload: { subject: 'payments.usd', sid: '1', sizeBytes: 48 }
+        }
+      }
+    ],
+    liveSandboxType: 'generic-simulator',
+    quiz: [
+      {
+        id: 'nats-q1',
+        question: 'What is the function of Queue Groups in NATS?',
+        options: [
+          'They load-balance incoming messages across a pool of subscribing workers so only one gets each message',
+          'They permanently delete old messages',
+          'They convert JSON to XML',
+          'They manage TLS encryption keys'
+        ],
+        correctAnswer: 0,
+        explanation: 'When subscribers join a Queue Group, NATS automatically load-balances messages across them in a 1-of-N pattern.'
+      }
+    ]
+  },
+  {
+    id: 'stomp',
+    slug: 'stomp',
+    name: 'STOMP',
+    fullName: 'Simple Text Oriented Messaging Protocol',
+    category: 'cloud',
+    osiLayer: 'Application',
+    port: '61613 / WebSocket',
+    rfc: 'STOMP 1.2 Specification',
+    yearIntroduced: 2005,
+    shortSummary: 'Lightweight, human-readable framing protocol designed for message passing between browsers and enterprise brokers.',
+    description: 'STOMP provides an interoperable wire format that enables web browsers (via WebSockets) and multi-language clients to communicate with enterprise message brokers (ActiveMQ, RabbitMQ, HornetQ) using simple HTTP-like headers and verbs (CONNECT, SUBSCRIBE, SEND, MESSAGE).',
+    keyFeatures: [
+      'HTTP-like header syntax (COMMAND followed by Key:Value headers and NULL byte terminator 0x00)',
+      'Native WebSocket integration for browser-to-broker pub/sub (SockJS + STOMP.js)',
+      'Heartbeating mechanism to detect broken connections',
+      'Transaction support via BEGIN, COMMIT, and ABORT commands'
+    ],
+    useCases: ['Spring Boot WebSocket real-time web applications', 'Browser push notifications from enterprise JMS brokers', 'Cross-language message bus abstraction between Python and Java'],
+    pros: ['Extremely simple and readable; easy to debug with network sniffers', 'Supported out of the box in Spring Framework and enterprise brokers'],
+    cons: ['Text header framing introduces more byte overhead than compact binary protocols like MQTT'],
+    actors: [
+      { id: 'browser', label: 'Web Browser (STOMP.js)', icon: 'Laptop', color: '#6366f1' },
+      { id: 'broker', label: 'Spring Boot Broker', icon: 'Server', color: '#10b981' }
+    ],
+    interactiveSteps: [
+      {
+        step: 1,
+        title: 'STOMP CONNECT Handshake',
+        description: 'Browser sends CONNECT frame over WebSocket with accept-version and heart-beat headers.',
+        actorSource: 'browser',
+        actorTarget: 'broker',
+        explanation: 'Broker confirms with CONNECTED frame indicating negotiated STOMP version 1.2.',
+        packetInfo: {
+          id: 'stomp-pkt-1',
+          source: 'Browser:52130',
+          destination: 'Broker:61613',
+          type: 'STOMP CONNECT',
+          summary: 'CONNECT accept-version:1.2, host:api.app.com',
+          payload: { command: 'CONNECT', headers: { 'accept-version': '1.2', 'heart-beat': '10000,10000' } }
+        }
+      },
+      {
+        step: 2,
+        title: 'SUBSCRIBE /topic/notifications',
+        description: 'Client subscribes to a destination channel with unique subscription id `sub-0`.',
+        actorSource: 'browser',
+        actorTarget: 'broker',
+        explanation: 'Broker registers client socket to the `/topic/notifications` broadcast stream.',
+        packetInfo: {
+          id: 'stomp-pkt-2',
+          source: 'Browser',
+          destination: 'Broker',
+          type: 'STOMP SUBSCRIBE',
+          summary: 'SUBSCRIBE id:sub-0, destination:/topic/notifications',
+          payload: { command: 'SUBSCRIBE', id: 'sub-0', destination: '/topic/notifications' }
+        }
+      },
+      {
+        step: 3,
+        title: 'MESSAGE Broadcast Frame',
+        description: 'Broker pushes MESSAGE frame containing JSON payload ending in NULL byte (0x00).',
+        actorSource: 'broker',
+        actorTarget: 'browser',
+        explanation: 'Client receives event and triggers real-time UI notification badge update.',
+        packetInfo: {
+          id: 'stomp-pkt-3',
+          source: 'Broker',
+          destination: 'Browser',
+          type: 'STOMP MESSAGE',
+          summary: 'MESSAGE destination:/topic/notifications | text: "New alert received"',
+          payload: { command: 'MESSAGE', subscription: 'sub-0', body: '{"alert": "High CPU load", "severity": "warning"}' }
+        }
+      }
+    ],
+    liveSandboxType: 'generic-simulator',
+    quiz: [
+      {
+        id: 'stomp-q1',
+        question: 'What character marks the end of a STOMP frame body on the wire?',
+        options: ['NULL byte (0x00)', 'Carriage Return Line Feed (CRLF)', 'Double Semicolon (;;)', 'Closing curly brace (})'],
+        correctAnswer: 0,
+        explanation: 'Every STOMP frame body terminates with a null byte (ASCII 0, hex 0x00) following the body content.'
+      }
+    ]
   }
 ];
+
 

@@ -26,31 +26,39 @@ export default function DnsSandbox() {
     const start = performance.now();
 
     try {
-      // Try Cloudflare DNS over HTTPS for real live queries!
-      const res = await fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(targetDomain)}&type=${targetType}`, {
-        headers: { Accept: 'application/dns-json' },
-      });
+      // First try local backend DNS resolver
+      const res = await fetch(`/api/dns?name=${encodeURIComponent(targetDomain)}&type=${targetType}`);
       const data = await res.json();
       const end = performance.now();
-      setLatency(Math.round(end - start));
+      setLatency(data.latencyMs || Math.round(end - start));
       setResult(data);
     } catch (err) {
-      // Fallback realistic simulation if offline or blocked
-      const end = performance.now();
-      setLatency(Math.round(end - start) || 24);
-      setResult({
-        Status: 0,
-        TC: false,
-        RD: true,
-        RA: true,
-        AD: true,
-        CD: false,
-        Question: [{ name: targetDomain, type: targetType === 'A' ? 1 : targetType === 'AAAA' ? 28 : 15 }],
-        Answer: [
-          { name: targetDomain, type: 1, TTL: 300, data: '104.16.132.229' },
-          { name: targetDomain, type: 1, TTL: 300, data: '104.16.133.229' }
-        ]
-      });
+      // Fallback Cloudflare DoH or realistic simulation
+      try {
+        const res = await fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(targetDomain)}&type=${targetType}`, {
+          headers: { Accept: 'application/dns-json' },
+        });
+        const data = await res.json();
+        const end = performance.now();
+        setLatency(Math.round(end - start));
+        setResult(data);
+      } catch {
+        const end = performance.now();
+        setLatency(Math.round(end - start) || 24);
+        setResult({
+          Status: 0,
+          TC: false,
+          RD: true,
+          RA: true,
+          AD: true,
+          CD: false,
+          Question: [{ name: targetDomain, type: targetType === 'A' ? 1 : targetType === 'AAAA' ? 28 : 15 }],
+          Answer: [
+            { name: targetDomain, type: 1, TTL: 300, data: '104.16.132.229' },
+            { name: targetDomain, type: 1, TTL: 300, data: '104.16.133.229' }
+          ]
+        });
+      }
     } finally {
       setIsLoading(false);
     }

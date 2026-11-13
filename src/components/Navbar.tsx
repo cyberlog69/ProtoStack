@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Layers, Activity, Search, Shield, Cpu, BookOpen, Terminal } from 'lucide-react';
+import { Layers, Activity, Search, Shield, Cpu, BookOpen, Terminal, ArrowLeftRight, Brain, Award } from 'lucide-react';
 import SearchModal from './SearchModal';
 
 export default function Navbar() {
@@ -42,7 +42,7 @@ export default function Navbar() {
             </div>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-1 text-sm font-medium text-slate-300">
+          <nav className="hidden lg:flex items-center gap-1 text-sm font-medium text-slate-300">
             <Link 
               href="/#protocols" 
               className="px-3 py-1.5 rounded-lg hover:text-white hover:bg-slate-800/60 transition-colors flex items-center gap-1.5"
@@ -58,25 +58,25 @@ export default function Navbar() {
               OSI & TCP/IP
             </Link>
             <Link 
-              href="/protocols/dns" 
+              href="/compare" 
               className="px-3 py-1.5 rounded-lg hover:text-white hover:bg-slate-800/60 transition-colors flex items-center gap-1.5"
             >
-              <Activity className="w-4 h-4 text-cyan-400" />
-              DNS Simulator
+              <ArrowLeftRight className="w-4 h-4 text-cyan-400" />
+              Compare
             </Link>
             <Link 
-              href="/protocols/mqtt" 
+              href="/quiz" 
               className="px-3 py-1.5 rounded-lg hover:text-white hover:bg-slate-800/60 transition-colors flex items-center gap-1.5"
             >
-              <Cpu className="w-4 h-4 text-emerald-400" />
-              IoT / MQTT
+              <Brain className="w-4 h-4 text-amber-400" />
+              Quizzes
             </Link>
             <Link 
-              href="/protocols/tcp" 
+              href="/dashboard" 
               className="px-3 py-1.5 rounded-lg hover:text-white hover:bg-slate-800/60 transition-colors flex items-center gap-1.5"
             >
-              <Terminal className="w-4 h-4 text-amber-400" />
-              TCP Handshake
+              <Award className="w-4 h-4 text-emerald-400" />
+              Dashboard
             </Link>
           </nav>
 
