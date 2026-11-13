@@ -72,7 +72,7 @@ Used only when the browser requests an external URL from the HTTP sandbox.
 ### Dependency and supply-chain checks
 
 - GitHub Dependabot for npm and GitHub Actions updates.
-- CodeQL analysis for JavaScript and TypeScript.
+- CodeQL analysis for JavaScript and TypeScript through GitHub's default code scanning setup.
 - `npm run check` (typecheck, lint, tests) runs in CI for every push and pull request.
 
 ---

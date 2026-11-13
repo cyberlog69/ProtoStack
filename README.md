@@ -130,7 +130,6 @@ CI runs typecheck, lint, tests, and a production build on Node 20.9 and Node 22.
 ProtoStack/
 ├── .github/
 │   ├── workflows/ci.yml                  # typecheck, lint, test, build
-│   ├── workflows/codeql.yml              # CodeQL JavaScript/TypeScript analysis
 │   └── dependabot.yml                    # npm and Actions updates
 ├── scripts/
 │   └── ingest-protocols.mjs              # data audit (real counts, no scraping)
