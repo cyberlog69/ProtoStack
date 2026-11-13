@@ -115,11 +115,11 @@ export async function POST(request: NextRequest) {
 
   const start = performance.now();
   const allowedHosts = getAllowedTargetHosts();
-  let currentUrl: string;
+  let currentUrl: URL;
 
   try {
     const validated = await validateOutboundUrl(rawUrl, allowedHosts);
-    currentUrl = validated.url;
+    currentUrl = validated.parsedUrl;
   } catch (error) {
     return errorResponse(error instanceof Error ? error.message : 'Invalid target URL.', 400);
   }
@@ -140,9 +140,9 @@ export async function POST(request: NextRequest) {
         // Only follow redirects for safe methods; surface 3xx for writes so the
         // browser does not replay a mutating request against a new origin.
         if (location && (method === 'GET' || method === 'HEAD') && redirects < MAX_REDIRECTS) {
-          const nextUrl = new URL(location, currentUrl).toString();
+          const nextUrl = new URL(location, currentUrl);
           try {
-            currentUrl = (await validateOutboundUrl(nextUrl, allowedHosts)).url;
+            currentUrl = (await validateOutboundUrl(nextUrl.toString(), allowedHosts)).parsedUrl;
             continue;
           } catch (error) {
             return errorResponse(
@@ -177,7 +177,7 @@ export async function POST(request: NextRequest) {
           status: response.status,
           statusText: response.statusText,
           timeMs,
-          finalUrl: currentUrl,
+          finalUrl: currentUrl.toString(),
           truncated,
           bytes,
           headers: responseHeaders,

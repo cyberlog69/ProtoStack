@@ -190,6 +190,7 @@ export async function validateOutboundUrl(
 
   return {
     url: canonical.toString(),
+    parsedUrl: canonical,
     hostname,
     addresses: resolved.map((entry) => entry.address),
   };
