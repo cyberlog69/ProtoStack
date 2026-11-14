@@ -103,6 +103,7 @@ function isDisallowedHostname(hostname: string): boolean {
 
 export interface ValidatedTarget {
   url: string;
+  parsedUrl: URL;
   hostname: string;
   addresses: string[];
 }
