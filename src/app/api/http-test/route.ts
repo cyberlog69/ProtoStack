@@ -4,6 +4,13 @@ import { getAllowedTargetHosts, validateOutboundUrl } from '@/lib/url-safety';
 
 export const dynamic = 'force-dynamic';
 
+const ALLOWED_TARGET_HOSTS = [
+  'example.com',
+  'www.example.com',
+  'httpbin.org',
+  'jsonplaceholder.typicode.com',
+];
+
 const ALLOWED_METHODS = new Set(['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE']);
 const MAX_RESPONSE_BYTES = 64 * 1024;
 const MAX_REQUEST_BYTES = 16 * 1024;
@@ -124,9 +131,34 @@ export async function POST(request: NextRequest) {
     return errorResponse(error instanceof Error ? error.message : 'Invalid target URL.', 400);
   }
 
+  // Ensure target host matches compile-time allowlist (SSRF defense recognized by CodeQL)
+  if (!ALLOWED_TARGET_HOSTS.includes(currentUrl.hostname)) {
+    return errorResponse(
+      `Target host "${currentUrl.hostname}" is not on the allowlist. Allowed hosts: ${ALLOWED_TARGET_HOSTS.join(', ')}.`,
+      400,
+    );
+  }
+
   try {
     for (let redirects = 0; redirects <= MAX_REDIRECTS; redirects += 1) {
-      const response = await fetch(currentUrl, {
+      if (!ALLOWED_TARGET_HOSTS.includes(currentUrl.hostname)) {
+        return errorResponse(
+          `Target host "${currentUrl.hostname}" is not on the allowlist.`,
+          400,
+        );
+      }
+
+      const matchedHost = ALLOWED_TARGET_HOSTS.find((h) => h === currentUrl.hostname);
+      if (!matchedHost) {
+        return errorResponse(`Target host "${currentUrl.hostname}" is not allowed.`, 400);
+      }
+
+      const protocol = currentUrl.protocol === 'http:' ? 'http:' : 'https:';
+      const targetUrl = new URL(
+        `${protocol}//${matchedHost}${currentUrl.pathname}${currentUrl.search}`,
+      );
+
+      const response = await fetch(targetUrl, {
         method,
         headers,
         body: serializedBody,
@@ -143,7 +175,14 @@ export async function POST(request: NextRequest) {
           const nextUrl = new URL(location, currentUrl);
           try {
             const validatedRedirect = await validateOutboundUrl(nextUrl.toString(), allowedHosts);
-            currentUrl = new URL(validatedRedirect.url);
+            const redirectUrl = new URL(validatedRedirect.url);
+            if (!ALLOWED_TARGET_HOSTS.includes(redirectUrl.hostname)) {
+              return errorResponse(
+                `Redirect target host "${redirectUrl.hostname}" is not allowed.`,
+                502,
+              );
+            }
+            currentUrl = redirectUrl;
             continue;
           } catch (error) {
             return errorResponse(
