@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const validated = await validateOutboundUrl(rawUrl, allowedHosts);
-    currentUrl = validated.parsedUrl;
+    currentUrl = new URL(validated.url);
   } catch (error) {
     return errorResponse(error instanceof Error ? error.message : 'Invalid target URL.', 400);
   }
@@ -142,7 +142,8 @@ export async function POST(request: NextRequest) {
         if (location && (method === 'GET' || method === 'HEAD') && redirects < MAX_REDIRECTS) {
           const nextUrl = new URL(location, currentUrl);
           try {
-            currentUrl = (await validateOutboundUrl(nextUrl.toString(), allowedHosts)).parsedUrl;
+            const validatedRedirect = await validateOutboundUrl(nextUrl.toString(), allowedHosts);
+            currentUrl = new URL(validatedRedirect.url);
             continue;
           } catch (error) {
             return errorResponse(
