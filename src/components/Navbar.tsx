@@ -11,6 +11,7 @@ import {
   ArrowLeftRight,
   Brain,
   Award,
+  Compass,
   Map as MapIcon,
   Menu,
   X,
@@ -19,8 +20,9 @@ import {
 const SearchModal = dynamic(() => import('./SearchModal'), { ssr: false });
 
 const NAV_ITEMS = [
+  { href: '/start', label: 'Start', icon: Compass, color: 'text-emerald-400' },
   { href: '/#protocols', label: 'Protocols', icon: BookOpen, color: 'text-indigo-400' },
-  { href: '/layers', label: 'OSI & TCP/IP', icon: Layers, color: 'text-purple-400' },
+  { href: '/layers', label: 'Layers', icon: Layers, color: 'text-purple-400' },
   { href: '/compare', label: 'Compare', icon: ArrowLeftRight, color: 'text-cyan-400' },
   { href: '/coverage', label: 'Coverage', icon: MapIcon, color: 'text-rose-400' },
   { href: '/quiz', label: 'Quizzes', icon: Brain, color: 'text-amber-400' },
@@ -95,7 +97,7 @@ export default function Navbar() {
             </div>
           </Link>
 
-          <nav aria-label="Primary" className="hidden lg:flex items-center gap-1 text-sm font-medium text-slate-300">
+          <nav aria-label="Primary" className="hidden lg:flex items-center gap-0.5 text-[13px] font-medium text-slate-300">
             {NAV_ITEMS.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.href);
@@ -104,7 +106,7 @@ export default function Navbar() {
                   key={item.href}
                   href={item.href}
                   aria-current={active ? 'page' : undefined}
-                  className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
+                  className={`px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap ${
                     active ? 'bg-slate-800/80 text-white' : 'hover:text-white hover:bg-slate-800/60'
                   }`}
                 >
@@ -124,8 +126,7 @@ export default function Navbar() {
               aria-label="Search all protocols"
             >
               <Search className="w-3.5 h-3.5 text-indigo-400" aria-hidden="true" />
-              <span className="hidden sm:inline">Search protocols...</span>
-              <span className="sm:hidden">Search</span>
+              <span className="hidden xl:inline">Search protocols...</span>
               <kbd className="hidden md:inline text-[10px] bg-slate-800 border border-slate-700 px-1.5 py-0.5 rounded text-slate-400">
                 Ctrl K
               </kbd>

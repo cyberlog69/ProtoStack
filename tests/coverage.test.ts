@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { PROTOCOLS } from '../src/data/protocols.ts';
+import { REFERENCE_ENTRIES } from '../src/data/reference.ts';
 import {
   PLANNED_FAMILIES,
   PROTOCOL_COVERAGE,
@@ -85,6 +86,13 @@ test('tier metadata is coherent and not behind the catalog', () => {
     TIER_ORDER.reduce((sum, tier) => sum + countByTier(tier), 0),
     total,
     'every protocol must belong to exactly one tier',
+  );
+
+  const referenceTier = TIER_META.find((tier) => tier.id === 'reference');
+  assert.ok(referenceTier);
+  assert.ok(
+    referenceTier.target >= REFERENCE_ENTRIES.length,
+    `reference target ${referenceTier.target} is below the published card count ${REFERENCE_ENTRIES.length}`,
   );
 });
 

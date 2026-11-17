@@ -5,7 +5,7 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38bdf8?style=flat-square&logo=tailwindcss)](https://tailwindcss.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](./LICENSE)
 
-**ProtoStack** is an open-source learning platform for computer networking, internet, and IoT protocols. It combines a 52-protocol catalog with step-by-step packet-flow models, OSI/TCP-IP layer views, side-by-side comparisons, quizzes, and sandboxes that are explicitly labelled **live** or **simulated**. Coverage is tiered and published on `/coverage`, so the site states what it teaches and what it does not.
+**ProtoStack** is an open-source learning platform for computer networking, internet, and IoT protocols. It combines 52 full protocol lessons and 76 reference cards with step-by-step packet-flow models, OSI/TCP-IP layer views, side-by-side comparisons, quizzes, and sandboxes that are explicitly labelled **live** or **simulated**. Coverage is tiered and published on `/coverage`, so the site states what it teaches and what it does not.
 
 Repository: [https://github.com/cyberlog69/ProtoStack](https://github.com/cyberlog69/ProtoStack)
 
@@ -48,6 +48,13 @@ Category counts are derived from the data at build time, so they cannot drift fr
 - A public coverage map shows the category × tier and OSI-layer × tier matrices, so empty areas are visible instead of implied.
 - The roadmap names the families that are *not* covered yet (routing/switching, telecom, storage, industrial, management, legacy) with estimated entry counts.
 - Prerequisites form a validated DAG: each protocol page links to the entries worth reading first, and cycles fail the test suite.
+
+### Learning path and reference library
+
+- **`/start`** — a five-module beginner path (15 lessons) ordered so every lesson only uses ideas introduced earlier. Progress is stored locally, and prerequisites that are still unread are flagged inline.
+- **`/reference`** — 76 compact reference cards for standards without a full lesson: routing, web, security, telecom, storage, industrial, management, discovery, tunnelling and legacy protocols, each with layer, specification, port and status.
+- **`/glossary`** — 116 networking terms defined in plain language, searchable and filterable by letter.
+- **`/standards`** — how to read an RFC: document statuses, MUST/SHOULD/MAY, document anatomy, errata, a seven-step reading method and a first-documents exercise.
 
 ### Animated packet flow
 
@@ -150,6 +157,10 @@ ProtoStack/
 │   │   │   ├── page.tsx                  # comparison index
 │   │   │   └── [a]/[b]/page.tsx          # validated, statically generated comparisons
 │   │   ├── coverage/page.tsx             # tiered coverage matrix, catalog and roadmap
+│   │   ├── glossary/page.tsx             # searchable terminology browser
+│   │   ├── reference/page.tsx            # filterable reference-card registry
+│   │   ├── standards/page.tsx            # how to read an RFC
+│   │   ├── start/page.tsx                # prerequisite-ordered beginner path
 │   │   ├── dashboard/                    # local progress dashboard (+ noindex metadata)
 │   │   ├── layers/                       # OSI/TCP-IP page and encapsulation simulator
 │   │   ├── protocols/[slug]/page.tsx     # statically generated protocol pages
@@ -161,6 +172,9 @@ ProtoStack/
 │   │   └── globals.css                   # focus styles, reduced motion, scrollbars
 │   ├── components/
 │   │   ├── ProtocolDetail.tsx            # client shell for a protocol page
+│   │   ├── CurriculumBoard.tsx           # Start Here path with local progress
+│   │   ├── GlossaryBrowser.tsx           # glossary search and letter filter
+│   │   ├── ReferenceBrowser.tsx          # reference-card filters
 │   │   ├── InteractiveVisualizer.tsx     # packet-flow animation and inspector
 │   │   ├── EncapsulationSimulator.tsx    # L7→L1 model with computed payload output
 │   │   ├── ComparisonView.tsx            # side-by-side comparison
@@ -171,6 +185,9 @@ ProtoStack/
 │   ├── data/
 │   │   ├── comparisons.ts
 │   │   ├── coverage.ts                   # tiers, difficulty, prerequisites, roadmap
+│   │   ├── curriculum.ts                 # ordered beginner path
+│   │   ├── glossary.ts                   # terminology
+│   │   ├── reference.ts                  # reference-card registry
 │   │   ├── layers.ts
 │   │   ├── protocols.ts                  # aggregator and category metadata
 │   │   └── protocols/                    # seven data files, 52 protocols
@@ -184,6 +201,7 @@ ProtoStack/
 ├── tests/
 │   ├── data.test.ts                      # catalog integrity
 │   ├── coverage.test.ts                  # tiers, prerequisites, roadmap
+│   ├── content.test.ts                   # curriculum, glossary and reference registry
 │   └── url-safety.test.ts                # SSRF-oriented URL validation
 ├── eslint.config.mjs
 ├── next.config.mjs                       # security headers and CSP

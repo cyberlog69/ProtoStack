@@ -10,6 +10,7 @@ import {
   getCoverage,
 } from '@/data/coverage';
 import { getCategoryBadge, getDifficultyBadge, getLayerColor, getTierBadge } from '@/lib/utils';
+import { REFERENCE_ENTRIES } from '@/data/reference';
 import { ArrowRight, CheckCircle2, CircleDashed, Compass, Map, ShieldCheck, TriangleAlert } from 'lucide-react';
 
 export const metadata: Metadata = {
@@ -36,6 +37,8 @@ function tierCountsFor<T extends { slug: string }>(items: T[]) {
 }
 
 const status = coverageStatus();
+const referenceCount = REFERENCE_ENTRIES.length;
+const totalWritten = status.written + referenceCount;
 const coreProtocols = PROTOCOLS.filter((protocol) => getCoverage(protocol.slug)?.tier === 'core');
 const startHere = coreProtocols.find((protocol) => getCoverage(protocol.slug)?.prerequisites.length === 0);
 
@@ -63,8 +66,9 @@ export default function CoveragePage() {
         </p>
 
         <p className="text-sm text-slate-400 max-w-3xl">
-          {status.written} entries are written today against a target of roughly {status.planned}. The roadmap below
-          lists what is still missing, so a gap is visible instead of implied.
+          {totalWritten} entries are published today — {status.written} full lessons and {referenceCount} reference
+          cards — against a target of roughly {status.planned}. The roadmap below lists what is still missing, so a gap
+          is visible instead of implied.
         </p>
       </header>
 
@@ -74,7 +78,7 @@ export default function CoveragePage() {
         </h2>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <StatCard label="Entries written" value={String(status.written)} detail="protocols with a lesson or card" />
+          <StatCard label="Entries published" value={String(totalWritten)} detail={`${status.written} lessons + ${referenceCount} cards`} />
           <StatCard
             label="Core study"
             value={`${countByTier('core')} / ${TIER_META[0].target}`}
@@ -89,7 +93,7 @@ export default function CoveragePage() {
           />
           <StatCard
             label="Reference"
-            value={`${countByTier('reference')} / ${TIER_META[2].target}`}
+            value={`${referenceCount} / ${TIER_META[2].target}`}
             detail="registry cards"
             accent="text-slate-300"
           />
@@ -128,7 +132,7 @@ export default function CoveragePage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {TIER_META.map((tier) => {
-            const written = countByTier(tier.id);
+            const written = tier.id === 'reference' ? referenceCount : countByTier(tier.id);
             const badge = getTierBadge(tier.id);
             const percent = Math.min(100, Math.round((written / tier.target) * 100));
 
@@ -213,7 +217,26 @@ export default function CoveragePage() {
                 <span className="text-slate-500">({entries.length})</span>
               </h3>
 
-              {entries.length === 0 ? (
+              {tier === 'reference' ? (
+                <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-white">
+                      {referenceCount} reference cards are published
+                    </p>
+                    <p className="text-xs text-slate-400">
+                      Compact entries for routing, telecom, storage, industrial, management and legacy protocols. They
+                      are deliberately excluded from the lesson counts above.
+                    </p>
+                  </div>
+                  <Link
+                    href="/reference"
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition-colors shrink-0"
+                  >
+                    Open the registry
+                    <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+                  </Link>
+                </div>
+              ) : entries.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-900/40 p-6 text-sm text-slate-400 flex items-start gap-3">
                   <CircleDashed className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
                   <span>
@@ -301,37 +324,92 @@ export default function CoveragePage() {
         <div className="space-y-2">
           <h2 id="roadmap" className="text-xl font-bold text-white flex items-center gap-2">
             <TriangleAlert className="w-5 h-5 text-amber-400" aria-hidden="true" />
-            Not yet covered — the roadmap
+            Roadmap by family
           </h2>
           <p className="text-sm text-slate-400 max-w-3xl">
-            These families are named so the boundary of the site is explicit. Nothing here is written yet; counts are
-            estimates of the entries each family would add.
+            Reference cards published against each family target. A card places the protocol; none of these families
+            has a full guided lesson yet, so the animated flow and quiz are the next step.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {PLANNED_FAMILIES.map((family) => (
-            <div key={family.id} className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5 space-y-3">
-              <div className="flex items-start justify-between gap-3">
-                <h3 className="text-sm font-bold text-white">{family.label}</h3>
-                <span className="text-[10px] font-mono text-amber-300 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded whitespace-nowrap">
-                  ≈{family.approximateEntries} planned
-                </span>
-              </div>
+          {PLANNED_FAMILIES.map((family) => {
+            const published = REFERENCE_ENTRIES.filter((entry) => entry.family === family.id).length;
+            const percent = Math.min(100, Math.round((published / family.approximateEntries) * 100));
 
-              <p className="text-xs text-slate-400 leading-relaxed">{family.description}</p>
-
-              <div className="flex flex-wrap gap-1.5">
-                {family.examples.map((example) => (
-                  <span
-                    key={example}
-                    className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800/80 text-slate-300 border border-slate-700"
-                  >
-                    {example}
+            return (
+              <div key={family.id} className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <h3 className="text-sm font-bold text-white">{family.label}</h3>
+                  <span className="text-[10px] font-mono text-amber-300 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded whitespace-nowrap">
+                    {published} / {family.approximateEntries} cards
                   </span>
-                ))}
+                </div>
+
+                <p className="text-xs text-slate-400 leading-relaxed">{family.description}</p>
+
+                <div className="h-1 rounded-full bg-slate-800 overflow-hidden" aria-hidden="true">
+                  <div className="h-full rounded-full bg-amber-500" style={{ width: `${percent}%` }} />
+                </div>
+
+                <div className="flex flex-wrap gap-1.5">
+                  {family.examples.map((example) => (
+                    <span
+                      key={example}
+                      className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800/80 text-slate-300 border border-slate-700"
+                    >
+                      {example}
+                    </span>
+                  ))}
+                </div>
               </div>
-            </div>
+            );
+          })}
+        </div>
+      </section>
+
+      <section aria-labelledby="library" className="space-y-4">
+        <h2 id="library" className="text-xl font-bold text-white">
+          Learning library
+        </h2>
+        <p className="text-sm text-slate-400 max-w-3xl">
+          Coverage is not the same as a course. These pages turn the catalog into something you can work through.
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {[
+            {
+              href: '/start',
+              label: 'Start Here path',
+              detail: 'Five prerequisite-ordered modules, from Ethernet frames to BGP.',
+            },
+            {
+              href: '/reference',
+              label: 'Reference registry',
+              detail: `${referenceCount} compact cards for standards without a full lesson.`,
+            },
+            {
+              href: '/glossary',
+              label: 'Glossary',
+              detail: 'Every acronym used by the lessons, defined in plain language.',
+            },
+            {
+              href: '/standards',
+              label: 'How to read an RFC',
+              detail: 'Statuses, normative keywords, document anatomy and errata.',
+            },
+          ].map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="rounded-2xl border border-slate-800 bg-slate-900/50 p-4 space-y-1 hover:border-indigo-500/40 transition-colors"
+            >
+              <span className="text-sm font-bold text-indigo-300 flex items-center gap-1.5">
+                {item.label}
+                <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+              </span>
+              <span className="block text-xs text-slate-400 leading-relaxed">{item.detail}</span>
+            </Link>
           ))}
         </div>
       </section>

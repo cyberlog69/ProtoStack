@@ -1,12 +1,16 @@
 import React from 'react';
 import Link from 'next/link';
 import { PROTOCOLS } from '@/data/protocols';
-import { Layers, Cpu, Network, Terminal, ArrowLeftRight, Brain, Award, BookOpen, Map as MapIcon } from 'lucide-react';
+import { Layers, Cpu, Network, Terminal, ArrowLeftRight, Brain, Award, BookOpen, Compass, Library, BookMarked, FileText, Map as MapIcon } from 'lucide-react';
 
 const EXPLORE_LINKS = [
+  { href: '/start', label: 'Start Here Path', icon: Compass },
   { href: '/layers', label: 'OSI & TCP/IP Layers', icon: Layers },
   { href: '/compare', label: 'Protocol Comparison', icon: ArrowLeftRight },
   { href: '/coverage', label: 'Coverage & Scope', icon: MapIcon },
+  { href: '/reference', label: 'Reference Registry', icon: Library },
+  { href: '/glossary', label: 'Glossary', icon: BookMarked },
+  { href: '/standards', label: 'How to Read an RFC', icon: FileText },
   { href: '/quiz', label: 'Knowledge Arena', icon: Brain },
   { href: '/dashboard', label: 'Learning Dashboard', icon: Award },
 ];

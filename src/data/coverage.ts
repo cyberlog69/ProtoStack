@@ -163,9 +163,9 @@ export interface PlannedFamily {
 }
 
 /**
- * Roadmap, not content. Nothing here is published on the site yet; it exists so
- * the coverage page can state what is missing instead of implying the catalog
- * is finished.
+ * Family targets for entries that do not have a full guided lesson. Some of
+ * these are already published as reference cards on /reference; the rest are
+ * still to be written.
  */
 export const PLANNED_FAMILIES: PlannedFamily[] = [
   {
