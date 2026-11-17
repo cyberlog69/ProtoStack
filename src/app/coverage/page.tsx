@@ -67,8 +67,8 @@ export default function CoveragePage() {
 
         <p className="text-sm text-slate-400 max-w-3xl">
           {totalWritten} entries are published today — {status.written} full lessons and {referenceCount} reference
-          cards — against a target of roughly {status.planned}. The roadmap below lists what is still missing, so a gap
-          is visible instead of implied.
+          cards — against a target of {status.planned}. Every family target is met; the remaining work is depth
+          (promoting cards to full lessons), not breadth.
         </p>
       </header>
 
@@ -324,11 +324,11 @@ export default function CoveragePage() {
         <div className="space-y-2">
           <h2 id="roadmap" className="text-xl font-bold text-white flex items-center gap-2">
             <TriangleAlert className="w-5 h-5 text-amber-400" aria-hidden="true" />
-            Roadmap by family
+            Family coverage
           </h2>
           <p className="text-sm text-slate-400 max-w-3xl">
-            Reference cards published against each family target. A card places the protocol; none of these families
-            has a full guided lesson yet, so the animated flow and quiz are the next step.
+            Reference cards published against each family target. All family targets are met. The remaining gap is
+            depth: promoting more cards to full lessons with an animated flow, sandbox and quiz.
           </p>
         </div>
 

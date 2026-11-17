@@ -1,4 +1,5 @@
 import type { OSILayer, ProtocolCategory } from '@/types/protocol';
+import { REFERENCE_EXTRA } from './reference-extra';
 
 export type ReferenceStatus = 'active' | 'legacy' | 'deprecated';
 
@@ -27,32 +28,10 @@ export interface ReferenceEntry {
  * standard and an official link where one exists. They are not counted as
  * lessons on /coverage.
  */
-export const REFERENCE_ENTRIES: ReferenceEntry[] = [
+const BASE_REFERENCE_ENTRIES: ReferenceEntry[] = [
   // Routing, switching and traffic engineering
-  {
-    id: 'rip',
-    name: 'RIP',
-    fullName: 'Routing Information Protocol',
-    family: 'routing-switching',
-    osiLayer: 'Application',
-    category: 'network',
-    standard: 'RFC 2453 (RIPv2), RFC 2080 (RIPng)',
-    port: 'UDP 520 / 521',
-    status: 'active',
-    summary: 'A distance-vector interior gateway protocol that counts hops, with a maximum usable diameter of 15 hops. Simple to run in labs, unsuitable for large networks.',
-    specUrl: 'https://www.rfc-editor.org/rfc/rfc2453.html',
-  },
-  {
-    id: 'isis',
-    name: 'IS-IS',
-    fullName: 'Intermediate System to Intermediate System',
-    family: 'routing-switching',
-    osiLayer: 'Network',
-    category: 'network',
-    standard: 'ISO/IEC 10589',
-    status: 'active',
-    summary: 'A link-state interior gateway protocol that runs directly over Layer 2 rather than IP. Common in large service-provider and data-centre fabrics.',
-  },
+
+
   {
     id: 'eigrp',
     name: 'EIGRP',
@@ -66,18 +45,7 @@ export const REFERENCE_ENTRIES: ReferenceEntry[] = [
     summary: 'A Cisco-originated advanced distance-vector protocol using the Diffusing Update Algorithm for fast, loop-free convergence. Published as an informational RFC in 2016.',
     specUrl: 'https://www.rfc-editor.org/rfc/rfc7868.html',
   },
-  {
-    id: 'vrrp',
-    name: 'VRRP',
-    fullName: 'Virtual Router Redundancy Protocol',
-    family: 'routing-switching',
-    osiLayer: 'Network',
-    category: 'network',
-    standard: 'RFC 5798',
-    status: 'active',
-    summary: 'Lets several routers share one virtual IP address so a default gateway survives a router failure. The open equivalent of Cisco HSRP.',
-    specUrl: 'https://www.rfc-editor.org/rfc/rfc5798.html',
-  },
+
   {
     id: 'hsrp',
     name: 'HSRP',
@@ -91,106 +59,16 @@ export const REFERENCE_ENTRIES: ReferenceEntry[] = [
     summary: 'Cisco first-hop redundancy: an active and standby router share a virtual MAC and IP address. Informational RFC, effectively Cisco-specific.',
     specUrl: 'https://www.rfc-editor.org/rfc/rfc2281.html',
   },
-  {
-    id: 'stp',
-    name: 'STP',
-    fullName: 'Spanning Tree Protocol (802.1D)',
-    family: 'routing-switching',
-    osiLayer: 'Data Link',
-    category: 'network',
-    standard: 'IEEE 802.1D',
-    status: 'active',
-    summary: 'Prevents Layer 2 forwarding loops by electing a root bridge and blocking redundant ports. RSTP and MSTP are the modern variants.',
-  },
-  {
-    id: 'lacp',
-    name: 'LACP',
-    fullName: 'Link Aggregation Control Protocol',
-    family: 'routing-switching',
-    osiLayer: 'Data Link',
-    category: 'network',
-    standard: 'IEEE 802.1AX (formerly 802.3ad)',
-    status: 'active',
-    summary: 'Negotiates bundling several physical links into one logical link, increasing bandwidth and adding resilience.',
-  },
-  {
-    id: 'lldp',
-    name: 'LLDP',
-    fullName: 'Link Layer Discovery Protocol',
-    family: 'routing-switching',
-    osiLayer: 'Data Link',
-    category: 'network',
-    standard: 'IEEE 802.1AB',
-    status: 'active',
-    summary: 'Vendor-neutral neighbour discovery: switches and hosts advertise identity, port and capability information to directly connected peers.',
-  },
-  {
-    id: 'bfd',
-    name: 'BFD',
-    fullName: 'Bidirectional Forwarding Detection',
-    family: 'routing-switching',
-    osiLayer: 'Application',
-    category: 'network',
-    standard: 'RFC 5880',
-    port: 'UDP 3784 / 4784',
-    status: 'active',
-    summary: 'A lightweight hello protocol that detects path failure in milliseconds, independent of the routing protocol it protects.',
-    specUrl: 'https://www.rfc-editor.org/rfc/rfc5880.html',
-  },
-  {
-    id: 'vxlan',
-    name: 'VXLAN',
-    fullName: 'Virtual Extensible LAN',
-    family: 'routing-switching',
-    osiLayer: 'Data Link',
-    category: 'network',
-    standard: 'RFC 7348',
-    port: 'UDP 4789',
-    status: 'active',
-    summary: 'Encapsulates Layer 2 frames inside UDP to stretch VLANs across an IP underlay, with a 24-bit VNI supporting about 16 million segments.',
-    specUrl: 'https://www.rfc-editor.org/rfc/rfc7348.html',
-  },
+
+
+
+
+
 
   // Web, API and document protocols
-  {
-    id: 'http2',
-    name: 'HTTP/2',
-    fullName: 'Hypertext Transfer Protocol version 2',
-    family: 'web-api',
-    osiLayer: 'Application',
-    category: 'application',
-    standard: 'RFC 9113',
-    port: 'TCP 443 (usually over TLS)',
-    status: 'active',
-    summary: 'Binary framing with multiplexed streams over one TCP connection, header compression and server push. Removes HTTP/1.1 head-of-line blocking at the request level.',
-    specUrl: 'https://www.rfc-editor.org/rfc/rfc9113.html',
-  },
-  {
-    id: 'http3',
-    name: 'HTTP/3',
-    fullName: 'Hypertext Transfer Protocol version 3',
-    family: 'web-api',
-    osiLayer: 'Application',
-    category: 'application',
-    standard: 'RFC 9114',
-    port: 'UDP 443 (QUIC)',
-    status: 'active',
-    summary: 'Maps HTTP semantics onto QUIC streams, inheriting TLS 1.3, 0-RTT reconnects and connection migration without TCP head-of-line blocking.',
-    specUrl: 'https://www.rfc-editor.org/rfc/rfc9114.html',
-  },
-  {
-    id: 'webdav',
-    name: 'WebDAV',
-    fullName: 'Web Distributed Authoring and Versioning',
-    family: 'web-api',
-    osiLayer: 'Application',
-    category: 'application',
-    standard: 'RFC 4918',
-    port: 'TCP 80 / 443',
-    status: 'active',
-    summary: 'Extends HTTP with methods such as PROPFIND, MKCOL and LOCK so clients can edit and manage files on a remote server.',
-    specUrl: 'https://www.rfc-editor.org/rfc/rfc4918.html',
-  },
+
+
+
   {
     id: 'caldav',
     name: 'CalDAV',
@@ -255,31 +133,8 @@ export const REFERENCE_ENTRIES: ReferenceEntry[] = [
   },
 
   // Security, identity and network access control
-  {
-    id: 'acme',
-    name: 'ACME',
-    fullName: 'Automatic Certificate Management Environment',
-    family: 'security-identity',
-    osiLayer: 'Application',
-    category: 'security',
-    standard: 'RFC 8555',
-    port: 'TCP 443',
-    status: 'active',
-    summary: 'The protocol behind Let\'s Encrypt: automates domain validation, certificate issuance and renewal with signed JSON messages.',
-    specUrl: 'https://www.rfc-editor.org/rfc/rfc8555.html',
-  },
-  {
-    id: 'oidc',
-    name: 'OpenID Connect',
-    fullName: 'OpenID Connect Core 1.0',
-    family: 'security-identity',
-    osiLayer: 'Application',
-    category: 'security',
-    standard: 'OpenID Connect Core 1.0',
-    status: 'active',
-    summary: 'An identity layer on top of OAuth 2.0 that adds an ID token (a signed JWT) and a userinfo endpoint, giving clients authenticated identity rather than just authorization.',
-    specUrl: 'https://openid.net/specs/openid-connect-core-1_0.html',
-  },
+
+
   {
     id: 'scim',
     name: 'SCIM',
@@ -293,19 +148,7 @@ export const REFERENCE_ENTRIES: ReferenceEntry[] = [
     summary: 'A REST/JSON schema and API for provisioning users and groups between identity providers and applications.',
     specUrl: 'https://www.rfc-editor.org/rfc/rfc7644.html',
   },
-  {
-    id: 'radius',
-    name: 'RADIUS',
-    fullName: 'Remote Authentication Dial-In User Service',
-    family: 'security-identity',
-    osiLayer: 'Application',
-    category: 'security',
-    standard: 'RFC 2865, RFC 2866',
-    port: 'UDP 1812 / 1813',
-    status: 'active',
-    summary: 'The classic AAA protocol for network access: authenticates users, authorises services and carries accounting records. Passwords are hidden but the payload is not encrypted.',
-    specUrl: 'https://www.rfc-editor.org/rfc/rfc2865.html',
-  },
+
   {
     id: 'tacacs',
     name: 'TACACS+',
@@ -319,17 +162,7 @@ export const REFERENCE_ENTRIES: ReferenceEntry[] = [
     summary: 'A Cisco-originated AAA protocol that encrypts the whole payload and separates authentication, authorisation and accounting. Common for device administration.',
     specUrl: 'https://www.rfc-editor.org/rfc/rfc8907.html',
   },
-  {
-    id: 'dot1x',
-    name: '802.1X',
-    fullName: 'IEEE 802.1X Port-Based Network Access Control',
-    family: 'security-identity',
-    osiLayer: 'Data Link',
-    category: 'security',
-    standard: 'IEEE 802.1X',
-    status: 'active',
-    summary: 'Authenticates a device before a switch port or Wi-Fi association grants network access, relaying EAP between the supplicant and an authentication server.',
-  },
+
   {
     id: 'eap',
     name: 'EAP',
@@ -342,19 +175,7 @@ export const REFERENCE_ENTRIES: ReferenceEntry[] = [
     summary: 'An authentication framework, not a single method: EAP-TLS, EAP-TTLS and PEAP are the common variants used by 802.1X and Wi-Fi.',
     specUrl: 'https://www.rfc-editor.org/rfc/rfc3748.html',
   },
-  {
-    id: 'dnssec',
-    name: 'DNSSEC',
-    fullName: 'Domain Name System Security Extensions',
-    family: 'security-identity',
-    osiLayer: 'Application',
-    category: 'security',
-    standard: 'RFC 4033, RFC 4034, RFC 4035',
-    port: 'UDP / TCP 53',
-    status: 'active',
-    summary: 'Adds cryptographic signatures to DNS records so a validating resolver can prove an answer is authentic and unmodified. It does not encrypt queries.',
-    specUrl: 'https://www.rfc-editor.org/rfc/rfc4033.html',
-  },
+
   {
     id: 'doh',
     name: 'DoH',
@@ -382,45 +203,9 @@ export const REFERENCE_ENTRIES: ReferenceEntry[] = [
   },
 
   // Email and messaging
-  {
-    id: 'spf',
-    name: 'SPF',
-    fullName: 'Sender Policy Framework',
-    family: 'email-messaging',
-    osiLayer: 'Application',
-    category: 'application',
-    standard: 'RFC 7208',
-    port: 'DNS (TXT)',
-    status: 'active',
-    summary: 'A DNS TXT record listing which hosts may send mail for a domain, checked against the SMTP envelope sender. Does not survive forwarding well.',
-    specUrl: 'https://www.rfc-editor.org/rfc/rfc7208.html',
-  },
-  {
-    id: 'dkim',
-    name: 'DKIM',
-    fullName: 'DomainKeys Identified Mail',
-    family: 'email-messaging',
-    osiLayer: 'Application',
-    category: 'application',
-    standard: 'RFC 6376',
-    port: 'DNS (TXT)',
-    status: 'active',
-    summary: 'Signs selected message headers and the body with a domain key, letting receivers verify integrity and domain ownership via a published public key.',
-    specUrl: 'https://www.rfc-editor.org/rfc/rfc6376.html',
-  },
-  {
-    id: 'dmarc',
-    name: 'DMARC',
-    fullName: 'Domain-based Message Authentication, Reporting and Conformance',
-    family: 'email-messaging',
-    osiLayer: 'Application',
-    category: 'application',
-    standard: 'RFC 7489',
-    port: 'DNS (TXT)',
-    status: 'active',
-    summary: 'Ties SPF and DKIM results to the visible From domain and tells receivers what to do on failure (none, quarantine, reject), with aggregate reporting.',
-    specUrl: 'https://www.rfc-editor.org/rfc/rfc7489.html',
-  },
+
+
+
   {
     id: 'mime',
     name: 'MIME',
@@ -448,19 +233,7 @@ export const REFERENCE_ENTRIES: ReferenceEntry[] = [
   },
 
   // Real-time media
-  {
-    id: 'rtp',
-    name: 'RTP',
-    fullName: 'Real-time Transport Protocol',
-    family: 'real-time-media',
-    osiLayer: 'Application',
-    category: 'application',
-    standard: 'RFC 3550',
-    port: 'UDP (even ports, negotiated)',
-    status: 'active',
-    summary: 'Carries timestamped audio and video over UDP, adding sequence numbers and payload type identifiers. It provides no reliability or congestion control by itself.',
-    specUrl: 'https://www.rfc-editor.org/rfc/rfc3550.html',
-  },
+
   {
     id: 'rtcp',
     name: 'RTCP',
@@ -566,31 +339,8 @@ export const REFERENCE_ENTRIES: ReferenceEntry[] = [
   },
 
   // Storage and file systems
-  {
-    id: 'nfs',
-    name: 'NFS',
-    fullName: 'Network File System',
-    family: 'storage',
-    osiLayer: 'Application',
-    category: 'cloud',
-    standard: 'RFC 8881 (v4.1), RFC 7530 (v4.0)',
-    port: 'TCP 2049',
-    status: 'active',
-    summary: 'A remote file-access protocol from Sun, now standardised by the IETF. NFSv4 brought stateful locking, integrated security and a single well-known port.',
-    specUrl: 'https://www.rfc-editor.org/rfc/rfc8881.html',
-  },
-  {
-    id: 'smb',
-    name: 'SMB',
-    fullName: 'Server Message Block',
-    family: 'storage',
-    osiLayer: 'Application',
-    category: 'cloud',
-    standard: 'Microsoft [MS-SMB2]',
-    port: 'TCP 445',
-    status: 'active',
-    summary: 'Windows file and printer sharing, also implemented by Samba. Modern SMB 3.x adds encryption, signing and multichannel.',
-  },
+
+
   {
     id: 'iscsi',
     name: 'iSCSI',
@@ -713,19 +463,7 @@ export const REFERENCE_ENTRIES: ReferenceEntry[] = [
   },
 
   // Management and observability
-  {
-    id: 'netconf',
-    name: 'NETCONF',
-    fullName: 'Network Configuration Protocol',
-    family: 'management-observability',
-    osiLayer: 'Application',
-    category: 'network',
-    standard: 'RFC 6241',
-    port: 'TCP 830 (over SSH)',
-    status: 'active',
-    summary: 'An XML RPC protocol for reading and changing device configuration transactionally, with candidate configs, validation and confirmed commits.',
-    specUrl: 'https://www.rfc-editor.org/rfc/rfc6241.html',
-  },
+
   {
     id: 'restconf',
     name: 'RESTCONF',
@@ -803,19 +541,7 @@ export const REFERENCE_ENTRIES: ReferenceEntry[] = [
   },
 
   // Discovery and local networking
-  {
-    id: 'mdns',
-    name: 'mDNS',
-    fullName: 'Multicast DNS',
-    family: 'discovery',
-    osiLayer: 'Application',
-    category: 'network',
-    standard: 'RFC 6762',
-    port: 'UDP 5353',
-    status: 'active',
-    summary: 'Resolves .local names without a DNS server by multicasting queries and caching answers. The basis of Bonjour and AirPrint discovery.',
-    specUrl: 'https://www.rfc-editor.org/rfc/rfc6762.html',
-  },
+
   {
     id: 'dnssd',
     name: 'DNS-SD',
@@ -993,6 +719,12 @@ export const REFERENCE_ENTRIES: ReferenceEntry[] = [
     summary: 'A deterministic LAN where stations pass a token to gain transmission rights. Competed with Ethernet and lost; withdrawn by IEEE.',
   },
 ];
+
+/**
+ * The public registry: the base cards plus later batches.
+ * Promoted entries are removed from the base list when they become lessons.
+ */
+export const REFERENCE_ENTRIES: ReferenceEntry[] = [...BASE_REFERENCE_ENTRIES, ...REFERENCE_EXTRA];
 
 export const REFERENCE_STATUS_META: Record<ReferenceStatus, { label: string; color: string }> = {
   active: { label: 'Active', color: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' },

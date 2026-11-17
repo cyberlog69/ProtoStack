@@ -33,8 +33,8 @@ export default function ReferencePage() {
         </p>
 
         <p className="text-xs text-slate-400 max-w-3xl">
-          These are reference entries, not lessons: they are excluded from the tier counts on the coverage page. When a
-          card is promoted to a lesson it gains the animated flow, sandbox and quiz.
+          These are reference entries, not lessons: they count toward the reference tier only, never the core or
+          professional lesson tiers. When a card is promoted to a lesson it gains the animated flow, sandbox and quiz.
         </p>
 
         <div className="flex flex-wrap gap-1.5 pt-1">

@@ -6,6 +6,10 @@ import { IOT_PROTOCOLS } from './protocols/iot';
 import { SECURITY_PROTOCOLS } from './protocols/security';
 import { WIRELESS_PROTOCOLS } from './protocols/wireless';
 import { CLOUD_PROTOCOLS } from './protocols/cloud';
+import { CORE_EXTRA_PROTOCOLS } from './protocols/core-extra';
+import { PROF_ROUTING_PROTOCOLS } from './protocols/prof-routing';
+import { PROF_SECURITY_PROTOCOLS } from './protocols/prof-security';
+import { PROF_APP_PROTOCOLS } from './protocols/prof-app';
 
 export const PROTOCOLS: Protocol[] = [
   ...NETWORK_PROTOCOLS,
@@ -15,6 +19,10 @@ export const PROTOCOLS: Protocol[] = [
   ...SECURITY_PROTOCOLS,
   ...WIRELESS_PROTOCOLS,
   ...CLOUD_PROTOCOLS,
+  ...CORE_EXTRA_PROTOCOLS,
+  ...PROF_ROUTING_PROTOCOLS,
+  ...PROF_SECURITY_PROTOCOLS,
+  ...PROF_APP_PROTOCOLS,
 ];
 
 export const CATEGORIES_META = [

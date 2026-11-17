@@ -34,6 +34,14 @@ export const START_HERE_PATH: CurriculumModule[] = [
         why: 'The same frame problem solved over radio, where you cannot hear while you transmit.',
       },
       {
+        slug: 'vlan',
+        why: 'How one physical switch carries several isolated networks without extra hardware.',
+      },
+      {
+        slug: 'stp',
+        why: 'Why redundant switch links are blocked on purpose, and what happens when they are not.',
+      },
+      {
         slug: 'ipv4',
         why: 'The addressing and forwarding model the internet was built on.',
       },
@@ -88,6 +96,10 @@ export const START_HERE_PATH: CurriculumModule[] = [
       {
         slug: 'http',
         why: 'Methods, status codes, headers and the keep-alive connection model.',
+      },
+      {
+        slug: 'http2',
+        why: 'How the modern web multiplexes many requests over one connection without head-of-line blocking per request.',
       },
       {
         slug: 'tls',

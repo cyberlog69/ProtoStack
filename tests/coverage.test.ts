@@ -94,6 +94,12 @@ test('tier metadata is coherent and not behind the catalog', () => {
     referenceTier.target >= REFERENCE_ENTRIES.length,
     `reference target ${referenceTier.target} is below the published card count ${REFERENCE_ENTRIES.length}`,
   );
+
+  assert.equal(
+    TIER_META.reduce((sum, tier) => sum + tier.target, 0),
+    PROTOCOLS.length + REFERENCE_ENTRIES.length,
+    'tier targets must add up to the published lesson and card count',
+  );
 });
 
 test('the roadmap lists real, named targets', () => {

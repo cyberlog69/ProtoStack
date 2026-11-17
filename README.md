@@ -5,7 +5,7 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38bdf8?style=flat-square&logo=tailwindcss)](https://tailwindcss.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](./LICENSE)
 
-**ProtoStack** is an open-source learning platform for computer networking, internet, and IoT protocols. It combines 52 full protocol lessons and 76 reference cards with step-by-step packet-flow models, OSI/TCP-IP layer views, side-by-side comparisons, quizzes, and sandboxes that are explicitly labelled **live** or **simulated**. Coverage is tiered and published on `/coverage`, so the site states what it teaches and what it does not.
+**ProtoStack** is an open-source learning platform for computer networking, internet, and IoT protocols. It combines 80 full protocol lessons and 80 reference cards with step-by-step packet-flow models, OSI/TCP-IP layer views, side-by-side comparisons, quizzes, and sandboxes that are explicitly labelled **live** or **simulated**. Coverage is tiered and published on `/coverage`, so the site states what it teaches and what it does not.
 
 Repository: [https://github.com/cyberlog69/ProtoStack](https://github.com/cyberlog69/ProtoStack)
 
@@ -30,7 +30,7 @@ Honesty is a design constraint here. Every sandbox states which mode it is in.
 
 ## Features
 
-### Protocol catalog (52 protocols)
+### Protocol catalog (80 protocols)
 
 - **Network & Internet** — DNS, IPv4, IPv6, ICMP, ARP, DHCP, BGP, OSPF, NTP, and more
 - **Transport Layer** — TCP, UDP, QUIC, SCTP
@@ -51,8 +51,8 @@ Category counts are derived from the data at build time, so they cannot drift fr
 
 ### Learning path and reference library
 
-- **`/start`** — a five-module beginner path (15 lessons) ordered so every lesson only uses ideas introduced earlier. Progress is stored locally, and prerequisites that are still unread are flagged inline.
-- **`/reference`** — 76 compact reference cards for standards without a full lesson: routing, web, security, telecom, storage, industrial, management, discovery, tunnelling and legacy protocols, each with layer, specification, port and status.
+- **`/start`** - a five-module beginner path (18 lessons) ordered so every lesson only uses ideas introduced earlier. Progress is stored locally, and prerequisites that are still unread are flagged inline.
+- **`/reference`** - 80 compact reference cards for standards without a full lesson: routing, web, security, telecom, storage, industrial, management, discovery, tunnelling and legacy protocols, each with layer, specification, port and status.
 - **`/glossary`** — 116 networking terms defined in plain language, searchable and filterable by letter.
 - **`/standards`** — how to read an RFC: document statuses, MUST/SHOULD/MAY, document anatomy, errata, a seven-step reading method and a first-documents exercise.
 
@@ -190,7 +190,7 @@ ProtoStack/
 │   │   ├── reference.ts                  # reference-card registry
 │   │   ├── layers.ts
 │   │   ├── protocols.ts                  # aggregator and category metadata
-│   │   └── protocols/                    # seven data files, 52 protocols
+│   │   └── protocols/                    # eleven data files, 80 protocols
 │   ├── lib/
 │   │   ├── hex.ts                        # CRC-32, hex dump, bit string
 │   │   ├── rate-limit.ts                 # in-memory fixed-window limiter
