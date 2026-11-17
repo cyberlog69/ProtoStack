@@ -124,6 +124,26 @@ npm run start
 | `NEXT_PUBLIC_SITE_URL` | No | Canonical site origin used for metadata, sitemap, and robots. Defaults to `http://localhost:3000`. Set this to your public HTTPS origin in production. |
 | `HTTP_TEST_ALLOWED_HOSTS` | No | Comma-separated allowlist for `/api/http-test`. Defaults to `example.com,www.example.com,httpbin.org,jsonplaceholder.typicode.com`. |
 
+### Containers and free hosts
+
+```bash
+docker build --build-arg NEXT_PUBLIC_SITE_URL=https://proto.example.com -t protostack .
+docker run --rm -p 3000:3000 protostack
+```
+
+Podman uses the same Dockerfile, and `docker-compose.yml` works with
+`docker compose` and `podman-compose`. A Quadlet unit for rootless Podman lives in
+`deploy/podman/protostack.container`.
+
+Prebuilt multi-arch images (amd64 and arm64) are published by
+`.github/workflows/container.yml` to `ghcr.io/cyberlog69/protostack`.
+
+Configs are included for Fly.io (`fly.toml`), Render (`render.yaml`) and Netlify
+(`netlify.toml`); Vercel, Railway, Koyeb and GCP Cloud Run need no extra file.
+See **[docs/DEPLOY.md](./docs/DEPLOY.md)** for the GCP VM walkthrough, Podman
+rootless setup, health checks, build-time vs runtime variables and the known
+limitations.
+
 ### Quality commands
 
 ```bash
@@ -144,13 +164,19 @@ CI runs typecheck, lint, tests, and a production build on Node 20.9 and Node 22.
 ProtoStack/
 ├── .github/
 │   ├── workflows/ci.yml                  # typecheck, lint, test, build
+│   ├── workflows/container.yml           # multi-arch image to GHCR
 │   └── dependabot.yml                    # npm and Actions updates
+├── deploy/
+│   └── podman/protostack.container       # rootless Podman Quadlet unit
+├── docs/
+│   └── DEPLOY.md                         # Docker, Podman, GCP, Fly, Render
 ├── scripts/
 │   └── ingest-protocols.mjs              # data audit (real counts, no scraping)
 ├── src/
 │   ├── app/
 │   │   ├── api/
 │   │   │   ├── dns/route.ts              # validated server-side DNS resolver
+│   │   │   ├── health/route.ts           # container liveness probe
 │   │   │   ├── http-demo/route.ts        # local same-origin echo endpoint
 │   │   │   └── http-test/route.ts        # allowlisted outbound HTTP proxy
 │   │   ├── compare/
@@ -204,9 +230,16 @@ ProtoStack/
 │   ├── content.test.ts                   # curriculum, glossary and reference registry
 │   └── url-safety.test.ts                # SSRF-oriented URL validation
 ├── eslint.config.mjs
-├── next.config.mjs                       # security headers and CSP
+├── next.config.mjs                       # security headers, CSP, standalone output
 ├── tailwind.config.ts
 ├── tsconfig.json
+├── Dockerfile                            # multi-stage, non-root, standalone
+├── docker-compose.yml
+├── .dockerignore
+├── .env.example
+├── fly.toml
+├── render.yaml
+├── netlify.toml
 ├── SECURITY.md
 ├── LICENSE
 └── README.md

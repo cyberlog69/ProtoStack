@@ -1,0 +1,19 @@
+# Netlify configuration.
+# Requires Netlify's official Next.js runtime plugin, which Netlify installs
+# when the plugin is listed here. If the plugin does not yet support the
+# installed Next.js version, deploy the Docker image instead (see docs/DEPLOY.md).
+
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NEXT_PUBLIC_SITE_URL = "https://your-site.netlify.app"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[[headers]]
+  for = "/api/health"
+  [headers.values]
+    Cache-Control = "no-store"

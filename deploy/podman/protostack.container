@@ -1,0 +1,33 @@
+# Podman Quadlet unit for rootless Podman 4.4+.
+#
+# Install:
+#   cp deploy/podman/protostack.container ~/.config/containers/systemd/
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now protostack
+#
+# The container listens on 3000 inside the container. Rootless Podman cannot
+# bind privileged ports by default, so this publishes 8080 on the host; put
+# Caddy, Nginx or a load balancer in front for 443.
+
+[Unit]
+Description=ProtoStack protocol learning site
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+Image=ghcr.io/cyberlog69/protostack:latest
+ContainerName=protostack
+PublishPort=8080:3000
+Environment=HTTP_TEST_ALLOWED_HOSTS=example.com,www.example.com,httpbin.org,jsonplaceholder.typicode.com
+AutoUpdate=registry
+HealthCmd=node -e "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+HealthInterval=30s
+HealthTimeout=5s
+HealthRetries=3
+HealthStartPeriod=20s
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target

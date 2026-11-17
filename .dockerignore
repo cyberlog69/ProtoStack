@@ -1,0 +1,28 @@
+# Dependencies and build output are installed inside the image.
+node_modules
+.next
+coverage
+*.tsbuildinfo
+
+# Repository metadata and local tooling.
+.git
+.gitignore
+.github
+.vscode
+.idea
+
+# Local environment files, but keep the example for documentation.
+.env
+.env.*
+!.env.example
+
+# Platform configs that are not needed to build the app.
+netlify.toml
+render.yaml
+fly.toml
+docker-compose.yml
+
+# Logs and editor leftovers.
+*.log
+npm-debug.log*
+.DS_Store

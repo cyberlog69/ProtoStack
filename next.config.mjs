@@ -1,4 +1,6 @@
 const isDev = process.env.NODE_ENV !== 'production';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
+const isHttpsDeployment = siteUrl.startsWith('https://');
 
 // Next injects inline bootstrap scripts, so 'unsafe-inline' is required for
 // script-src. Everything else is locked to the app origin. The live WebSocket
@@ -14,7 +16,9 @@ const contentSecurityPolicy = [
   "base-uri 'self'",
   "form-action 'self'",
   "frame-ancestors 'none'",
-  ...(isDev ? [] : ['upgrade-insecure-requests']),
+  // Only force HTTPS when the deployment is actually served over HTTPS. A
+  // container on http://localhost:3000 must keep loading its own assets.
+  ...(isDev || !isHttpsDeployment ? [] : ['upgrade-insecure-requests']),
 ].join('; ');
 
 const securityHeaders = [
@@ -24,7 +28,7 @@ const securityHeaders = [
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), payment=()' },
   { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
-  ...(isDev
+  ...(isDev || !isHttpsDeployment
     ? []
     : [
         {
@@ -38,6 +42,9 @@ const securityHeaders = [
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // Set NEXT_OUTPUT=standalone when building a container image. Other hosts
+  // (Vercel, Netlify) use their own output handling.
+  ...(process.env.NEXT_OUTPUT === 'standalone' ? { output: 'standalone' } : {}),
   async headers() {
     return [
       {

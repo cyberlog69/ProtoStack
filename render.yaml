@@ -1,0 +1,23 @@
+# Render blueprint (free web service using the repository Dockerfile).
+#   Dashboard -> New -> Blueprint -> select this repository.
+#
+# Free instances sleep when idle and cold-start on the next request. Check the
+# current free-tier limits before relying on one for a class or demo.
+#
+# NEXT_PUBLIC_SITE_URL is baked at build time. Replace the value below with the
+# final service URL (Render shows it after the first deploy); if the platform
+# does not pass it to the Docker build, rebuild with an explicit build arg.
+
+services:
+  - type: web
+    name: protostack
+    runtime: docker
+    plan: free
+    region: oregon
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NEXT_PUBLIC_SITE_URL
+        value: https://protostack.onrender.com
+      - key: HTTP_TEST_ALLOWED_HOSTS
+        value: example.com,www.example.com,httpbin.org,jsonplaceholder.typicode.com

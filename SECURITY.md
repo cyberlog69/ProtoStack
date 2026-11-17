@@ -51,6 +51,12 @@ Used only when the browser requests an external URL from the HTTP sandbox.
 - Request bodies are capped at 16 KB.
 - `cookie`, `authorization`, and `proxy-authorization` request headers are not echoed back.
 
+### Health endpoint — `/api/health`
+
+- Unauthenticated liveness probe for containers and load balancers.
+- Returns only `status`, `uptimeSeconds` and a timestamp, with `Cache-Control: no-store`.
+- Exposes no versions, hostnames, paths or environment values.
+
 ### Browser-side simulations
 
 - MQTT topic matching, retained messages, the TCP state machine, the generic step runner, and the simulated WebSocket session run entirely in the browser. They do not open broker or socket connections, and the UI labels them as simulated.
@@ -67,13 +73,14 @@ Used only when the browser requests an external URL from the HTTP sandbox.
 - `Referrer-Policy: strict-origin-when-cross-origin`
 - `Permissions-Policy` denying camera, microphone, geolocation, and payment
 - `Cross-Origin-Opener-Policy: same-origin`
-- `Strict-Transport-Security` (effective only when served over HTTPS)
+- `Strict-Transport-Security` and `upgrade-insecure-requests`, emitted only when `NEXT_PUBLIC_SITE_URL` is HTTPS, so a plain-HTTP container or VM can still load its own assets
 
 ### Dependency and supply-chain checks
 
 - GitHub Dependabot for npm and GitHub Actions updates.
 - CodeQL analysis for JavaScript and TypeScript through GitHub's default code scanning setup.
 - `npm run check` (typecheck, lint, tests) runs in CI for every push and pull request.
+- The container image is multi-stage and runs as an unprivileged user; it is built and published to GHCR by a separate workflow.
 
 ---
 

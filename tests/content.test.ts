@@ -129,6 +129,20 @@ test('reference entries are unique and structurally valid', () => {
   assert.ok(REFERENCE_ENTRIES.length >= 60, `expected at least 60 reference entries, found ${REFERENCE_ENTRIES.length}`);
 });
 
+test('health endpoint reports ok without leaking host details', async () => {
+  const { GET } = await import('../src/app/api/health/route.ts');
+  const response = await GET();
+
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('cache-control'), 'no-store');
+
+  const body = (await response.json()) as Record<string, unknown>;
+  assert.equal(body.status, 'ok');
+  assert.equal(typeof body.uptimeSeconds, 'number');
+  assert.equal(typeof body.timestamp, 'string');
+  assert.deepEqual(Object.keys(body).sort(), ['status', 'timestamp', 'uptimeSeconds']);
+});
+
 test('every reference family has at least one entry', () => {
   for (const family of REFERENCE_FAMILIES) {
     const count = REFERENCE_ENTRIES.filter((entry) => entry.family === family.id).length;
