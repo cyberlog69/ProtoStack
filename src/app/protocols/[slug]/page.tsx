@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { PROTOCOLS } from '@/data/protocols';
+import { getCoverage } from '@/data/coverage';
 import ProtocolDetail from '@/components/ProtocolDetail';
 import { SITE_NAME, SITE_URL } from '@/lib/site';
 
@@ -55,6 +56,12 @@ export default async function ProtocolPage({ params }: ProtocolPageProps) {
   const previous = index > 0 ? PROTOCOLS[index - 1] : null;
   const next = index < PROTOCOLS.length - 1 ? PROTOCOLS[index + 1] : null;
 
+  const coverage = getCoverage(protocol.slug);
+  const prerequisites = (coverage?.prerequisites ?? [])
+    .map((slug) => PROTOCOLS.find((entry) => entry.slug === slug))
+    .filter((entry): entry is (typeof PROTOCOLS)[number] => Boolean(entry))
+    .map((entry) => ({ slug: entry.slug, name: entry.name }));
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'LearningResource',
@@ -81,6 +88,10 @@ export default async function ProtocolPage({ params }: ProtocolPageProps) {
         protocol={protocol}
         previousProtocol={previous ? { slug: previous.slug, name: previous.name } : null}
         nextProtocol={next ? { slug: next.slug, name: next.name } : null}
+        tier={coverage?.tier ?? null}
+        difficulty={coverage?.difficulty ?? null}
+        lastReviewed={coverage?.lastReviewed ?? null}
+        prerequisites={prerequisites}
       />
     </>
   );

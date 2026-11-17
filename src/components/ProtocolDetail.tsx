@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { Protocol } from '@/types/protocol';
-import { getLayerColor, getCategoryBadge } from '@/lib/utils';
+import { getLayerColor, getCategoryBadge, getDifficultyBadge, getTierBadge } from '@/lib/utils';
 import { useProgress } from '@/context/ProgressContext';
 import {
   ArrowLeft,
@@ -53,15 +53,29 @@ interface ProtocolDetailProps {
   protocol: Protocol;
   previousProtocol: { slug: string; name: string } | null;
   nextProtocol: { slug: string; name: string } | null;
+  tier: string | null;
+  difficulty: string | null;
+  lastReviewed: string | null;
+  prerequisites: { slug: string; name: string }[];
 }
 
-export default function ProtocolDetail({ protocol, previousProtocol, nextProtocol }: ProtocolDetailProps) {
+export default function ProtocolDetail({
+  protocol,
+  previousProtocol,
+  nextProtocol,
+  tier,
+  difficulty,
+  lastReviewed,
+  prerequisites,
+}: ProtocolDetailProps) {
   const { toggleLearned, toggleBookmark, isLearned, isBookmarked } = useProgress();
 
   const learned = isLearned(protocol.id);
   const bookmarked = isBookmarked(protocol.id);
   const catBadge = getCategoryBadge(protocol.category);
   const layerBadge = getLayerColor(protocol.osiLayer);
+  const tierBadge = tier ? getTierBadge(tier) : null;
+  const difficultyBadge = difficulty ? getDifficultyBadge(difficulty) : null;
 
   const renderSandbox = () => {
     switch (protocol.liveSandboxType) {
@@ -150,6 +164,16 @@ export default function ProtocolDetail({ protocol, previousProtocol, nextProtoco
           <span className={`text-xs font-semibold px-3 py-1 rounded-full border ${catBadge.color}`}>
             {catBadge.label}
           </span>
+          {tierBadge && (
+            <span className={`text-xs font-mono px-2.5 py-1 rounded-md border ${tierBadge.color}`}>
+              {`${tierBadge.label} track`}
+            </span>
+          )}
+          {difficultyBadge && (
+            <span className={`text-xs font-mono px-2.5 py-1 rounded-md border ${difficultyBadge.color}`}>
+              {difficultyBadge.label}
+            </span>
+          )}
           <span className={`text-xs font-mono px-2.5 py-1 rounded-md border ${layerBadge}`}>
             OSI: {protocol.osiLayer} Layer
           </span>
@@ -177,6 +201,25 @@ export default function ProtocolDetail({ protocol, previousProtocol, nextProtoco
           <p className="text-base text-slate-300 max-w-3xl leading-relaxed">
             {protocol.description}
           </p>
+
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-400">
+            {prerequisites.length > 0 ? (
+              <span>
+                Read first:{' '}
+                {prerequisites.map((prerequisite, index) => (
+                  <span key={prerequisite.slug}>
+                    {index > 0 && ', '}
+                    <Link href={`/protocols/${prerequisite.slug}`} className="text-cyan-300 hover:underline">
+                      {prerequisite.name}
+                    </Link>
+                  </span>
+                ))}
+              </span>
+            ) : (
+              <span className="text-emerald-300">No prerequisites — a valid entry point.</span>
+            )}
+            {lastReviewed && <span className="font-mono text-slate-500">Content reviewed {lastReviewed}</span>}
+          </div>
         </div>
       </div>
 

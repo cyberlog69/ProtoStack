@@ -11,6 +11,7 @@ import {
   ArrowLeftRight,
   Brain,
   Award,
+  Map as MapIcon,
   Menu,
   X,
 } from 'lucide-react';
@@ -21,6 +22,7 @@ const NAV_ITEMS = [
   { href: '/#protocols', label: 'Protocols', icon: BookOpen, color: 'text-indigo-400' },
   { href: '/layers', label: 'OSI & TCP/IP', icon: Layers, color: 'text-purple-400' },
   { href: '/compare', label: 'Compare', icon: ArrowLeftRight, color: 'text-cyan-400' },
+  { href: '/coverage', label: 'Coverage', icon: MapIcon, color: 'text-rose-400' },
   { href: '/quiz', label: 'Quizzes', icon: Brain, color: 'text-amber-400' },
   { href: '/dashboard', label: 'Dashboard', icon: Award, color: 'text-emerald-400' },
 ];

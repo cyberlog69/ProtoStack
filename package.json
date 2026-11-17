@@ -12,7 +12,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test tests/data.test.ts tests/url-safety.test.ts",
+    "test": "tsx --test tests/data.test.ts tests/coverage.test.ts tests/url-safety.test.ts",
     "check": "npm run typecheck && npm run lint && npm run test",
     "ingest": "node scripts/ingest-protocols.mjs"
   },

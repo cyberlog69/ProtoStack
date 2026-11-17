@@ -26,8 +26,7 @@ export function getLayerColor(layer: string): string {
   }
 }
 
-export function getCategoryBadge(category: string): { label: string; color: string } {
-  switch (category) {
+export function getCategoryBadge(category: string): { label: string; color: string } {  switch (category) {
     case 'network':
       return { label: 'Network & Core', color: 'bg-blue-500/15 text-blue-300 border-blue-500/30' };
     case 'transport':
@@ -44,6 +43,32 @@ export function getCategoryBadge(category: string): { label: string; color: stri
       return { label: 'Cloud & Messaging', color: 'bg-purple-500/15 text-purple-300 border-purple-500/30' };
     default:
       return { label: category, color: 'bg-slate-500/15 text-slate-300 border-slate-500/30' };
+  }
+}
+
+export function getTierBadge(tier: string): { label: string; color: string } {
+  switch (tier) {
+    case 'core':
+      return { label: 'Core', color: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30' };
+    case 'professional':
+      return { label: 'Professional', color: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30' };
+    case 'reference':
+      return { label: 'Reference', color: 'bg-slate-500/15 text-slate-300 border-slate-500/30' };
+    default:
+      return { label: tier, color: 'bg-slate-500/15 text-slate-300 border-slate-500/30' };
+  }
+}
+
+export function getDifficultyBadge(difficulty: string): { label: string; color: string } {
+  switch (difficulty) {
+    case 'beginner':
+      return { label: 'Beginner', color: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' };
+    case 'intermediate':
+      return { label: 'Intermediate', color: 'bg-amber-500/15 text-amber-300 border-amber-500/30' };
+    case 'advanced':
+      return { label: 'Advanced', color: 'bg-rose-500/15 text-rose-300 border-rose-500/30' };
+    default:
+      return { label: difficulty, color: 'bg-slate-500/15 text-slate-300 border-slate-500/30' };
   }
 }
 

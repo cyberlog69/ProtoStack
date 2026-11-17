@@ -3,7 +3,8 @@
 import React from 'react';
 import Link from 'next/link';
 import { Protocol } from '@/types/protocol';
-import { getLayerColor, getCategoryBadge } from '@/lib/utils';
+import { getLayerColor, getCategoryBadge, getDifficultyBadge, getTierBadge } from '@/lib/utils';
+import { getCoverage } from '@/data/coverage';
 import { ArrowRight, Play, Terminal, Shield, Cpu, Network, Globe } from 'lucide-react';
 
 interface ProtocolCardProps {
@@ -13,6 +14,9 @@ interface ProtocolCardProps {
 export default function ProtocolCard({ protocol }: ProtocolCardProps) {
   const catBadge = getCategoryBadge(protocol.category);
   const layerBadge = getLayerColor(protocol.osiLayer);
+  const coverage = getCoverage(protocol.slug);
+  const tierBadge = coverage ? getTierBadge(coverage.tier) : null;
+  const difficultyBadge = coverage ? getDifficultyBadge(coverage.difficulty) : null;
 
   const getCategoryIcon = () => {
     switch (protocol.category) {
@@ -30,12 +34,17 @@ export default function ProtocolCard({ protocol }: ProtocolCardProps) {
   return (
     <div className="glow-card group flex flex-col justify-between rounded-2xl bg-slate-900/60 border border-slate-800/80 p-6 hover:border-indigo-500/50 hover:bg-slate-900/90 transition-all duration-300">
       <div>
-        <div className="flex items-center justify-between gap-2 mb-4">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+          <div className="flex flex-wrap items-center gap-2">
             <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border ${catBadge.color} flex items-center gap-1.5`}>
               {getCategoryIcon()}
               {catBadge.label}
             </span>
+            {tierBadge && (
+              <span className={`text-[10px] font-mono px-2 py-0.5 rounded-md border ${tierBadge.color}`}>
+                {tierBadge.label}
+              </span>
+            )}
           </div>
 
           <span className={`text-[10px] font-mono px-2 py-0.5 rounded-md border ${layerBadge}`}>
@@ -72,11 +81,18 @@ export default function ProtocolCard({ protocol }: ProtocolCardProps) {
         </div>
       </div>
 
-      <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between">
-        <span className="text-xs text-slate-400 flex items-center gap-1">
-          <Terminal className="w-3.5 h-3.5 text-indigo-400" />
-          {protocol.interactiveSteps.length} interactive steps
-        </span>
+      <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-slate-400 flex items-center gap-1">
+            <Terminal className="w-3.5 h-3.5 text-indigo-400" aria-hidden="true" />
+            {protocol.interactiveSteps.length} interactive steps
+          </span>
+          {difficultyBadge && (
+            <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${difficultyBadge.color}`}>
+              {difficultyBadge.label}
+            </span>
+          )}
+        </div>
 
         <Link
           href={`/protocols/${protocol.slug}`}

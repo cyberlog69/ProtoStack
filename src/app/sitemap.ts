@@ -10,6 +10,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: absoluteUrl('/'), lastModified: now, changeFrequency: 'weekly', priority: 1 },
     { url: absoluteUrl('/layers'), lastModified: now, changeFrequency: 'monthly', priority: 0.8 },
     { url: absoluteUrl('/compare'), lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
+    { url: absoluteUrl('/coverage'), lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
     { url: absoluteUrl('/quiz'), lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
   ];
 

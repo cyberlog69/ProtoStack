@@ -5,7 +5,7 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38bdf8?style=flat-square&logo=tailwindcss)](https://tailwindcss.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](./LICENSE)
 
-**ProtoStack** is an open-source learning platform for computer networking, internet, and IoT protocols. It combines a 52-protocol catalog with step-by-step packet-flow models, OSI/TCP-IP layer views, side-by-side comparisons, quizzes, and sandboxes that are explicitly labelled **live** or **simulated**.
+**ProtoStack** is an open-source learning platform for computer networking, internet, and IoT protocols. It combines a 52-protocol catalog with step-by-step packet-flow models, OSI/TCP-IP layer views, side-by-side comparisons, quizzes, and sandboxes that are explicitly labelled **live** or **simulated**. Coverage is tiered and published on `/coverage`, so the site states what it teaches and what it does not.
 
 Repository: [https://github.com/cyberlog69/ProtoStack](https://github.com/cyberlog69/ProtoStack)
 
@@ -41,6 +41,13 @@ Honesty is a design constraint here. Every sandbox states which mode it is in.
 - **Cloud & Event Streaming** — AMQP, Apache Kafka, Redis RESP, WebRTC, NATS, STOMP
 
 Category counts are derived from the data at build time, so they cannot drift from the catalog. Each protocol ships with at least three interaction steps and two quiz questions, and the data tests enforce those floors.
+
+### Coverage and scope (`/coverage`)
+
+- Every entry is assigned a tier — **core study**, **professional working knowledge**, or **reference registry** — plus a difficulty level, prerequisites and a review date.
+- A public coverage map shows the category × tier and OSI-layer × tier matrices, so empty areas are visible instead of implied.
+- The roadmap names the families that are *not* covered yet (routing/switching, telecom, storage, industrial, management, legacy) with estimated entry counts.
+- Prerequisites form a validated DAG: each protocol page links to the entries worth reading first, and cycles fail the test suite.
 
 ### Animated packet flow
 
@@ -142,6 +149,7 @@ ProtoStack/
 │   │   ├── compare/
 │   │   │   ├── page.tsx                  # comparison index
 │   │   │   └── [a]/[b]/page.tsx          # validated, statically generated comparisons
+│   │   ├── coverage/page.tsx             # tiered coverage matrix, catalog and roadmap
 │   │   ├── dashboard/                    # local progress dashboard (+ noindex metadata)
 │   │   ├── layers/                       # OSI/TCP-IP page and encapsulation simulator
 │   │   ├── protocols/[slug]/page.tsx     # statically generated protocol pages
@@ -162,6 +170,7 @@ ProtoStack/
 │   ├── context/ProgressContext.tsx       # typed localStorage progress state
 │   ├── data/
 │   │   ├── comparisons.ts
+│   │   ├── coverage.ts                   # tiers, difficulty, prerequisites, roadmap
 │   │   ├── layers.ts
 │   │   ├── protocols.ts                  # aggregator and category metadata
 │   │   └── protocols/                    # seven data files, 52 protocols
@@ -174,6 +183,7 @@ ProtoStack/
 │   └── types/protocol.ts                 # protocol, step, packet, quiz types
 ├── tests/
 │   ├── data.test.ts                      # catalog integrity
+│   ├── coverage.test.ts                  # tiers, prerequisites, roadmap
 │   └── url-safety.test.ts                # SSRF-oriented URL validation
 ├── eslint.config.mjs
 ├── next.config.mjs                       # security headers and CSP
