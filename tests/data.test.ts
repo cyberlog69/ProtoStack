@@ -148,6 +148,20 @@ test('protocol content avoids known placeholder values', () => {
   }
 });
 
+test('every interactive step has a decoded wire payload', () => {
+  for (const protocol of PROTOCOLS) {
+    for (const step of protocol.interactiveSteps) {
+      assert.ok(step.packetInfo, `${protocol.slug} step ${step.step} has no packetInfo`);
+      assert.ok(step.packetInfo.id.length > 0, `${protocol.slug} step ${step.step} has no packet id`);
+      assert.ok(step.packetInfo.summary.length > 0, `${protocol.slug} step ${step.step} has no summary`);
+      assert.ok(
+        Object.keys(step.packetInfo.payload ?? {}).length > 0,
+        `${protocol.slug} step ${step.step} has an empty payload`,
+      );
+    }
+  }
+});
+
 test('numeric ports are within the valid TCP/UDP range', () => {
   for (const protocol of PROTOCOLS) {
     if (typeof protocol.port === 'number') {

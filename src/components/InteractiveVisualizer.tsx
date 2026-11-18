@@ -1,18 +1,55 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { useReducedMotion } from 'framer-motion';
 import { Protocol } from '@/types/protocol';
-import { crc32Hex, hexDump } from '@/lib/hex';
+import { crc32Hex, hexDump, toBitString } from '@/lib/hex';
 import {
-  Play, Pause, RotateCcw, ChevronRight, ChevronLeft,
-  Laptop, Server, Globe, Database, ShieldCheck, Cpu,
-  Smartphone, Network, Radio, CheckCircle2,
-  Clock, CreditCard, Zap, Eye
+  Play,
+  Pause,
+  RotateCcw,
+  ChevronLeft,
+  ChevronRight,
+  ArrowRight,
+  Laptop,
+  Server,
+  Globe,
+  Database,
+  ShieldCheck,
+  Cpu,
+  Smartphone,
+  Network,
+  Radio,
+  CheckCircle2,
+  Clock,
+  CreditCard,
+  Zap,
+  Terminal,
+  ListOrdered,
+  Table2,
+  Binary,
+  Boxes,
+  Code2,
 } from 'lucide-react';
 
-interface VisualizerProps {
-  protocol: Protocol;
+type TabId = 'process' | 'wire' | 'bytes' | 'nodes' | 'syntax';
+
+const ACTOR_ICONS: Record<string, React.ReactNode> = {
+  Laptop: <Laptop className="w-5 h-5 text-indigo-400" aria-hidden="true" />,
+  Server: <Server className="w-5 h-5 text-cyan-400" aria-hidden="true" />,
+  Globe: <Globe className="w-5 h-5 text-amber-400" aria-hidden="true" />,
+  Database: <Database className="w-5 h-5 text-emerald-400" aria-hidden="true" />,
+  ShieldCheck: <ShieldCheck className="w-5 h-5 text-rose-400" aria-hidden="true" />,
+  Cpu: <Cpu className="w-5 h-5 text-emerald-400" aria-hidden="true" />,
+  Smartphone: <Smartphone className="w-5 h-5 text-amber-400" aria-hidden="true" />,
+  Network: <Network className="w-5 h-5 text-blue-400" aria-hidden="true" />,
+  Clock: <Clock className="w-5 h-5 text-emerald-400" aria-hidden="true" />,
+  CreditCard: <CreditCard className="w-5 h-5 text-rose-400" aria-hidden="true" />,
+  Terminal: <Terminal className="w-5 h-5 text-slate-300" aria-hidden="true" />,
+};
+
+function actorIcon(name: string) {
+  return ACTOR_ICONS[name] ?? <Radio className="w-5 h-5 text-indigo-400" aria-hidden="true" />;
 }
 
 function isInteractiveTarget(target: EventTarget | null): boolean {
@@ -22,55 +59,81 @@ function isInteractiveTarget(target: EventTarget | null): boolean {
   );
 }
 
-export default function InteractiveVisualizer({ protocol }: VisualizerProps) {
+/** Turns `sequenceNumber` into `Sequence Number` and expands common acronyms. */
+function humanize(key: string): string {
+  return key
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/[_-]+/g, ' ')
+    .trim()
+    .replace(
+      /\b(id|ip|ttl|tcp|udp|tls|dns|mac|ack|syn|fin|rst|url|uri|json|http|https|api|qos|mss|mtu|crc|uuid|cid|vn|vni|vlan|ttl)\b/gi,
+      (match) => match.toUpperCase(),
+    )
+    .replace(/^./, (character) => character.toUpperCase());
+}
+
+function formatValue(value: unknown): string {
+  if (value === null) return 'null';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  return JSON.stringify(value);
+}
+
+function describeType(value: unknown): string {
+  if (value === null) return 'null';
+  if (Array.isArray(value)) return `array[${value.length}]`;
+  return typeof value;
+}
+
+/** Removes a redundant "Step 2:" prefix from titles shown next to a step number. */
+function stepLabel(title: string): string {
+  return title.replace(/^step\s*\d+\s*[:.\-–]\s*/i, '').trim() || title;
+}
+
+export default function InteractiveVisualizer({ protocol }: { protocol: Protocol }) {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [speed, setSpeed] = useState<0.5 | 1 | 2>(1);
-  const [activeTab, setActiveTab] = useState<'explanation' | 'packet' | 'hex' | 'nodes'>('explanation');
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-  const [packetProgress, setPacketProgress] = useState(0); // 0 to 100% animation progress
+  const [activeTab, setActiveTab] = useState<TabId>('process');
+  const [packetProgress, setPacketProgress] = useState(0);
   const shouldReduceMotion = useReducedMotion();
 
   const steps = protocol.interactiveSteps;
-  const currentStep = steps[currentStepIndex] || steps[0];
+  const currentStep = steps[currentStepIndex] ?? steps[0];
+  const previousStep = currentStepIndex > 0 ? steps[currentStepIndex - 1] : null;
+  const nextStep = currentStepIndex < steps.length - 1 ? steps[currentStepIndex + 1] : null;
 
-  // Base duration in ms per step divided by playback speed
   const stepDuration = 3200 / speed;
 
   useEffect(() => {
-    let animTimer: NodeJS.Timeout;
-    let progressTimer: NodeJS.Timeout;
+    if (!isPlaying) return;
 
-    if (isPlaying) {
-      setPacketProgress(0);
-      const intervalMs = 30;
-      const stepIncrement = 100 / (stepDuration / intervalMs);
+    const intervalMs = 30;
+    const progressTimer = window.setInterval(() => {
+      setPacketProgress((previous) => Math.min(100, previous + (100 * intervalMs) / stepDuration));
+    }, intervalMs);
 
-      progressTimer = setInterval(() => {
-        setPacketProgress((prev) => {
-          if (prev >= 100) return 100;
-          return prev + stepIncrement;
-        });
-      }, intervalMs);
-
-      animTimer = setTimeout(() => {
-        if (currentStepIndex < steps.length - 1) {
-          setCurrentStepIndex((prev) => prev + 1);
-          setPacketProgress(0);
-        } else {
-          setIsPlaying(false);
-          setPacketProgress(100);
-        }
-      }, stepDuration);
-    } else {
-      setPacketProgress(100);
-    }
+    const advanceTimer = window.setTimeout(() => {
+      if (currentStepIndex < steps.length - 1) {
+        setCurrentStepIndex((previous) => previous + 1);
+        setPacketProgress(0);
+      } else {
+        setIsPlaying(false);
+        setPacketProgress(100);
+      }
+    }, stepDuration);
 
     return () => {
-      clearTimeout(animTimer);
-      clearInterval(progressTimer);
+      window.clearTimeout(advanceTimer);
+      window.clearInterval(progressTimer);
     };
   }, [isPlaying, currentStepIndex, steps.length, stepDuration]);
+
+  const goToStep = useCallback((index: number) => {
+    setIsPlaying(false);
+    setCurrentStepIndex(index);
+    setPacketProgress(0);
+  }, []);
 
   const handlePlayToggle = useCallback(() => {
     if (isPlaying) {
@@ -80,26 +143,18 @@ export default function InteractiveVisualizer({ protocol }: VisualizerProps) {
 
     if (currentStepIndex >= steps.length - 1) {
       setCurrentStepIndex(0);
-      setPacketProgress(0);
     }
+    setPacketProgress(0);
     setIsPlaying(true);
   }, [currentStepIndex, isPlaying, steps.length]);
 
   const handleNext = useCallback(() => {
-    if (currentStepIndex < steps.length - 1) {
-      setCurrentStepIndex(currentStepIndex + 1);
-      setPacketProgress(0);
-      setIsPlaying(false);
-    }
-  }, [currentStepIndex, steps.length]);
+    if (currentStepIndex < steps.length - 1) goToStep(currentStepIndex + 1);
+  }, [currentStepIndex, goToStep, steps.length]);
 
   const handlePrev = useCallback(() => {
-    if (currentStepIndex > 0) {
-      setCurrentStepIndex(currentStepIndex - 1);
-      setPacketProgress(0);
-      setIsPlaying(false);
-    }
-  }, [currentStepIndex]);
+    if (currentStepIndex > 0) goToStep(currentStepIndex - 1);
+  }, [currentStepIndex, goToStep]);
 
   const handleReset = useCallback(() => {
     setIsPlaying(false);
@@ -107,8 +162,6 @@ export default function InteractiveVisualizer({ protocol }: VisualizerProps) {
     setPacketProgress(0);
   }, []);
 
-  // Keyboard navigation. Handlers are declared above so this effect always
-  // subscribes to the current versions.
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (isInteractiveTarget(event.target)) return;
@@ -129,7 +182,6 @@ export default function InteractiveVisualizer({ protocol }: VisualizerProps) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleNext, handlePrev, handlePlayToggle]);
 
-
   if (!currentStep) {
     return (
       <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-10 text-center space-y-2">
@@ -141,81 +193,76 @@ export default function InteractiveVisualizer({ protocol }: VisualizerProps) {
     );
   }
 
-  const packetText =
-    currentStep.packetInfo
-      ? JSON.stringify(currentStep.packetInfo.payload)
-      : currentStep.codeSnippet || currentStep.description;
-  const packetHexLines = hexDump(packetText);
-  const packetChecksum = crc32Hex(packetText);
+  const actors = protocol.actors;
+  const actorCount = actors.length;
+  const sourceIndex = actors.findIndex((actor) => actor.id === currentStep.actorSource);
+  const targetIndex = actors.findIndex((actor) => actor.id === currentStep.actorTarget);
+  const sourceActor = sourceIndex >= 0 ? actors[sourceIndex] : null;
+  const targetActor = targetIndex >= 0 ? actors[targetIndex] : null;
 
-  const getActorIcon = (iconName: string) => {
-    switch (iconName) {
-      case 'Laptop': return <Laptop className="w-5 h-5 text-indigo-400" />;
-      case 'Server': return <Server className="w-5 h-5 text-cyan-400" />;
-      case 'Globe': return <Globe className="w-5 h-5 text-amber-400" />;
-      case 'Database': return <Database className="w-5 h-5 text-emerald-400" />;
-      case 'ShieldCheck': return <ShieldCheck className="w-5 h-5 text-rose-400" />;
-      case 'Cpu': return <Cpu className="w-5 h-5 text-emerald-400" />;
-      case 'Smartphone': return <Smartphone className="w-5 h-5 text-amber-400" />;
-      case 'Network': return <Network className="w-5 h-5 text-blue-400" />;
-      case 'Clock': return <Clock className="w-5 h-5 text-emerald-400" />;
-      case 'CreditCard': return <CreditCard className="w-5 h-5 text-rose-400" />;
-      default: return <Radio className="w-5 h-5 text-indigo-400" />;
-    }
-  };
+  // Nodes are centred in equal grid columns, so the wire uses the same centres.
+  const centrePercent = (index: number) => (actorCount > 0 ? ((index + 0.5) / actorCount) * 100 : 50);
+  const sourceX = sourceIndex >= 0 ? centrePercent(sourceIndex) : 12;
+  const targetX = targetIndex >= 0 ? centrePercent(targetIndex) : 88;
+  const movingRight = targetX >= sourceX;
+  const shownProgress = shouldReduceMotion ? 100 : packetProgress;
+  const shownPacketX = sourceX + (targetX - sourceX) * (shownProgress / 100);
 
-  const sourceActorIndex = protocol.actors.findIndex(a => a.id === currentStep.actorSource);
-  const targetActorIndex = protocol.actors.findIndex(a => a.id === currentStep.actorTarget);
-  const sourceActor = protocol.actors[sourceActorIndex];
-  const targetActor = protocol.actors[targetActorIndex];
+  const payload = currentStep.packetInfo?.payload ?? {};
+  const payloadEntries = Object.entries(payload);
+  const payloadJson = JSON.stringify(payload);
+  const payloadBytes = new TextEncoder().encode(payloadJson).byteLength;
+  const checksum = crc32Hex(payloadJson);
+  const hexLines = hexDump(payloadJson);
+  const bitString = toBitString(payloadJson, 16);
+  const packetType = currentStep.packetInfo?.type ?? 'Protocol message';
 
-  // Calculate packet position in percentage between source and target index
-  const numActors = protocol.actors.length;
-  const getActorPositionPercent = (idx: number) => {
-    if (numActors <= 1) return 50;
-    return (idx / (numActors - 1)) * 100;
-  };
-
-  const sourceX = sourceActorIndex >= 0 ? getActorPositionPercent(sourceActorIndex) : 10;
-  const targetX = targetActorIndex >= 0 ? getActorPositionPercent(targetActorIndex) : 90;
-  const currentPacketX = sourceX + (targetX - sourceX) * (packetProgress / 100);
+  const tabs: { id: TabId; label: string; icon: React.ReactNode }[] = [
+    { id: 'process', label: 'Process', icon: <ListOrdered className="w-3.5 h-3.5" aria-hidden="true" /> },
+    { id: 'wire', label: 'Wire fields', icon: <Table2 className="w-3.5 h-3.5" aria-hidden="true" /> },
+    { id: 'bytes', label: 'Bytes', icon: <Binary className="w-3.5 h-3.5" aria-hidden="true" /> },
+    { id: 'nodes', label: 'Nodes', icon: <Boxes className="w-3.5 h-3.5" aria-hidden="true" /> },
+    ...(currentStep.codeSnippet
+      ? [{ id: 'syntax' as TabId, label: 'Syntax', icon: <Code2 className="w-3.5 h-3.5" aria-hidden="true" /> }]
+      : []),
+  ];
 
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-900/90 backdrop-blur-md overflow-hidden shadow-2xl">
-      {/* Top Header & Simulation Controls */}
-      <div className="px-6 py-4 border-b border-slate-800 flex flex-wrap items-center justify-between gap-4 bg-slate-950/80">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              Interactive Packet Flow Simulation
-            </h3>
+      {/* Controls */}
+      <div className="px-5 sm:px-6 py-4 border-b border-slate-800 flex flex-wrap items-center justify-between gap-4 bg-slate-950/80">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" aria-hidden="true" />
+            <h3 className="text-base font-bold text-white">Interactive Packet Flow</h3>
             <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-              Animated Model
+              Animated model
             </span>
           </div>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Step {currentStepIndex + 1} of {steps.length}: <span className="text-slate-200 font-semibold">{currentStep.title}</span>
+          <p className="text-xs text-slate-400 mt-0.5" aria-live="polite">
+            Step {currentStepIndex + 1} of {steps.length}:{' '}
+            <span className="text-slate-200 font-semibold">{currentStep.title}</span>
+          </p>
+          <p className="text-[11px] text-slate-500 mt-0.5">
+            Field values come from the protocol model, not from a live capture.
           </p>
         </div>
 
-        {/* Playback Controls & Speed Toggle */}
         <div className="flex items-center gap-2">
-          {/* Speed Selector */}
           <div className="flex rounded-lg bg-slate-900 border border-slate-800 p-0.5 mr-1 text-xs font-mono">
-            {([0.5, 1, 2] as const).map((s) => (
+            {([0.5, 1, 2] as const).map((value) => (
               <button
-                key={s}
+                key={value}
                 type="button"
-                onClick={() => setSpeed(s)}
-                aria-pressed={speed === s}
-                aria-label={`Playback speed ${s}x`}
+                onClick={() => setSpeed(value)}
+                aria-pressed={speed === value}
+                aria-label={`Playback speed ${value}x`}
                 className={`px-2 py-1 rounded text-[10px] font-bold transition-colors ${
-                  speed === s ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
+                  speed === value ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
                 }`}
-                title={`Speed ${s}x`}
+                title={`Speed ${value}x`}
               >
-                {s}x
+                {value}x
               </button>
             ))}
           </div>
@@ -245,7 +292,7 @@ export default function InteractiveVisualizer({ protocol }: VisualizerProps) {
             ) : (
               <>
                 <Play className="w-3.5 h-3.5 fill-current" aria-hidden="true" />
-                <span>{currentStepIndex === steps.length - 1 ? 'Replay' : 'Auto Play'}</span>
+                <span>{currentStepIndex === steps.length - 1 ? 'Replay' : 'Play'}</span>
               </>
             )}
           </button>
@@ -266,303 +313,343 @@ export default function InteractiveVisualizer({ protocol }: VisualizerProps) {
             onClick={handleReset}
             aria-label="Reset to first step"
             className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition-colors ml-1"
-            title="Reset to Step 1"
+            title="Reset to step 1"
           >
             <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
           </button>
         </div>
       </div>
 
-      {/* Network Topology & Visualizer Canvas */}
-      <div className="p-6 md:p-10 bg-slate-950 relative overflow-hidden min-h-[300px] flex flex-col justify-center select-none">
-        {/* Ambient Grid Pattern */}
-        <div className="absolute inset-0 bg-grid-pattern opacity-30 pointer-events-none" />
+      {/* Stage */}
+      <div className="px-4 sm:px-6 md:px-8 pt-8 pb-5 bg-slate-950 relative overflow-hidden select-none">
+        <div className="absolute inset-0 bg-grid-pattern opacity-25 pointer-events-none" aria-hidden="true" />
 
-        {/* In-Flight Transmission Bus Wire */}
-        <div className="relative z-0 w-full mb-12 mt-6">
-          {/* Main Background Wire */}
-          <div className="absolute top-1/2 left-0 right-0 h-1 -translate-y-1/2 bg-slate-800 rounded-full" />
+        <div className="relative z-10">
+          <div className="relative h-[44px]" aria-hidden="true">
+            <div className="absolute left-0 right-0 top-[22px] h-px bg-slate-800" />
+            <div
+              className="absolute top-[20px] h-1.5 rounded-full bg-gradient-to-r from-indigo-500 via-cyan-400 to-indigo-500 shadow-lg shadow-cyan-500/40 transition-all duration-300"
+              style={{
+                left: `${Math.min(sourceX, targetX)}%`,
+                width: `${Math.abs(targetX - sourceX)}%`,
+              }}
+            />
+            <ChevronRight
+              className="absolute top-[12px] w-5 h-5 text-cyan-300"
+              style={{
+                left: `${targetX}%`,
+                transform: movingRight ? 'translateX(-50%)' : 'translateX(-50%) rotate(180deg)',
+              }}
+              aria-hidden="true"
+            />
+          </div>
 
-          {/* Active Highlighted Wire between Source and Target */}
-          <div 
-            className="absolute top-1/2 h-1.5 -translate-y-1/2 bg-gradient-to-r from-indigo-500 via-cyan-400 to-indigo-500 shadow-lg shadow-cyan-500/50 rounded-full transition-all duration-300"
+          <div
+            className="absolute z-30 pointer-events-none"
             style={{
-              left: `${Math.min(sourceX, targetX)}%`,
-              width: `${Math.abs(targetX - sourceX)}%`
+              left: `clamp(58px, ${shownPacketX}%, calc(100% - 58px))`,
+              top: 22,
+              transform: 'translate(-50%, -100%)',
             }}
-          />
-
-          {/* Real-Time Travelling Packet Orb */}
-          <motion.div
-            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-20 pointer-events-none flex flex-col items-center"
-            style={{ left: `${currentPacketX}%` }}
-            animate={shouldReduceMotion ? undefined : { scale: [1, 1.15, 1] }}
-            transition={shouldReduceMotion ? undefined : { repeat: Infinity, duration: 1.2 }}
           >
-            {/* Glowing Packet Capsule */}
-            <div className="px-2.5 py-1 rounded-full bg-gradient-to-r from-cyan-400 via-indigo-500 to-purple-500 text-white font-mono text-[10px] font-black shadow-xl shadow-cyan-500/50 flex items-center gap-1.5 border border-white/40">
-              <Zap className="w-3 h-3 text-yellow-300 animate-pulse fill-current" aria-hidden="true" />
-              <span>{currentStep.packetInfo?.type.split(' ')[0] || 'PACKET'}</span>
+            <div className="flex flex-col items-center">
+              <div className="px-2.5 py-1 rounded-full bg-gradient-to-r from-cyan-400 via-indigo-500 to-purple-500 text-white font-mono text-[10px] font-black shadow-xl shadow-cyan-500/40 flex items-center gap-1.5 border border-white/40 whitespace-nowrap max-w-[110px] sm:max-w-[150px]">
+                <Zap className="w-3 h-3 text-yellow-300 fill-current shrink-0" aria-hidden="true" />
+                <span className="truncate">{packetType}</span>
+              </div>
+              <div className="w-2 h-2 bg-indigo-500 rotate-45 -mt-1 shadow-sm" />
             </div>
+          </div>
 
-            {/* Downward Pointer Triangle */}
-            <div className="w-2 h-2 bg-indigo-500 rotate-45 -mt-1 shadow-sm" />
-          </motion.div>
-        </div>
+          <div
+            className="grid items-start gap-1"
+            style={{ gridTemplateColumns: `repeat(${Math.max(actorCount, 1)}, minmax(0, 1fr))` }}
+          >
+            {actors.map((actor, index) => {
+              const isSource = index === sourceIndex;
+              const isTarget = index === targetIndex;
+              const active = isSource || isTarget;
+              const address = isSource
+                ? currentStep.packetInfo?.source
+                : isTarget
+                  ? currentStep.packetInfo?.destination
+                  : null;
 
-        {/* Network Nodes (Actors) */}
-        <div className="relative z-10 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 items-center">
-          {protocol.actors.map((actor) => {
-            const isSource = actor.id === currentStep.actorSource;
-            const isTarget = actor.id === currentStep.actorTarget;
-            const isActive = isSource || isTarget;
-            const isSelected = selectedNodeId === actor.id;
-
-            return (
-              <motion.button
-                key={actor.id}
-                type="button"
-                onClick={() => setSelectedNodeId(actor.id === selectedNodeId ? null : actor.id)}
-                aria-pressed={isSelected}
-                aria-label={`${actor.label} (${actor.id})`}
-                whileHover={shouldReduceMotion ? undefined : { scale: 1.04 }}
-                className={`relative cursor-pointer text-left flex flex-col items-center text-center p-4 rounded-2xl border transition-all duration-300 ${
-                  isActive
-                    ? isSource
-                      ? 'bg-indigo-950/70 border-indigo-400 shadow-xl shadow-indigo-500/30 ring-2 ring-indigo-500/40'
-                      : 'bg-cyan-950/70 border-cyan-400 shadow-xl shadow-cyan-500/30 ring-2 ring-cyan-500/40'
-                    : isSelected
-                    ? 'bg-slate-900 border-indigo-400 shadow-md'
-                    : 'bg-slate-900/50 border-slate-800/80 hover:border-slate-700 opacity-80'
-                }`}
-              >
-                {/* Active Indicator Badges */}
-                <AnimatePresence>
+              return (
+                <div key={actor.id} className="relative flex flex-col items-center text-center px-0.5">
                   {isSource && (
-                    <motion.span 
-                      initial={{ opacity: 0, y: -5 }} 
-                      animate={{ opacity: 1, y: 0 }} 
-                      exit={{ opacity: 0 }}
-                      className="absolute -top-3 px-2 py-0.5 rounded-full text-[9px] font-black bg-indigo-500 text-white uppercase tracking-wider shadow-md"
-                    >
-                      TRANSMITTING
-                    </motion.span>
+                    <span className="mb-1 px-1.5 py-0.5 rounded-full text-[9px] font-black bg-indigo-500 text-white uppercase tracking-wider">
+                      Sends
+                    </span>
                   )}
                   {isTarget && (
-                    <motion.span 
-                      initial={{ opacity: 0, y: -5 }} 
-                      animate={{ opacity: 1, y: 0 }} 
-                      exit={{ opacity: 0 }}
-                      className="absolute -top-3 px-2 py-0.5 rounded-full text-[9px] font-black bg-cyan-400 text-slate-950 uppercase tracking-wider shadow-md animate-bounce"
-                    >
-                      RECEIVING
-                    </motion.span>
+                    <span className="mb-1 px-1.5 py-0.5 rounded-full text-[9px] font-black bg-cyan-400 text-slate-950 uppercase tracking-wider">
+                      Receives
+                    </span>
                   )}
-                </AnimatePresence>
+                  {!active && <span className="mb-1 h-[18px]" aria-hidden="true" />}
 
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-2.5 border transition-all ${
-                  isActive
-                    ? 'border-indigo-400 bg-slate-900 shadow-inner'
-                    : 'border-slate-800 bg-slate-950'
-                }`}>
-                  {getActorIcon(actor.icon)}
+                  <div
+                    className={`relative z-10 w-14 h-14 rounded-2xl flex items-center justify-center border-2 bg-slate-950 transition-all ${
+                      isSource
+                        ? 'border-indigo-400 shadow-lg shadow-indigo-500/30 ring-2 ring-indigo-500/30'
+                        : isTarget
+                          ? 'border-cyan-400 shadow-lg shadow-cyan-500/30 ring-2 ring-cyan-500/30'
+                          : 'border-slate-800 opacity-75'
+                    }`}
+                  >
+                    {actorIcon(actor.icon)}
+                  </div>
+
+                  <span className="mt-2 text-[11px] sm:text-xs font-bold text-white leading-tight">{actor.label}</span>
+                  <span className="text-[9px] text-slate-500 font-mono truncate max-w-full">{actor.id}</span>
+                  <span className="text-[9px] text-slate-400 font-mono truncate max-w-full min-h-[12px]">
+                    {address ?? ''}
+                  </span>
                 </div>
-
-                <span className="text-xs font-bold text-white mb-0.5">{actor.label}</span>
-                <span className="text-[10px] text-slate-400 font-mono">ID: {actor.id}</span>
-
-                {/* Node arrival ripple pulse */}
-                {isTarget && packetProgress > 85 && (
-                  <span className="absolute inset-0 rounded-2xl border-2 border-cyan-400 animate-ping pointer-events-none opacity-40" />
-                )}
-              </motion.button>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
 
-        {/* Active Packet Transmission Banner */}
-        {currentStep.packetInfo && (
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-8 relative z-10 bg-slate-900/90 border border-indigo-500/40 rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-4 shadow-xl"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-indigo-600/20 border border-indigo-500/40 flex items-center justify-center shrink-0">
-                <Zap className="w-4 h-4 text-cyan-400 animate-pulse" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono font-bold text-indigo-300">
-                    {currentStep.packetInfo.type}
-                  </span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 font-mono">
-                    {sourceActor?.label} ➔ {targetActor?.label}
-                  </span>
-                  <span className="text-[10px] font-mono text-emerald-400 font-semibold">
-                    [Progress: {Math.round(packetProgress)}%]
-                  </span>
-                </div>
-                <p className="text-xs text-slate-300 font-mono truncate max-w-lg mt-0.5">
-                  {currentStep.packetInfo.summary}
-                </p>
-              </div>
+        {/* Mechanism strip */}
+        <div className="relative z-10 mt-5 rounded-xl border border-slate-800 bg-slate-900/80 p-3 space-y-2">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] font-mono">
+            <span className="text-slate-500">Direction</span>
+            <span className="text-cyan-300 inline-flex items-center gap-1">
+              {sourceActor?.label ?? currentStep.actorSource}
+              <ArrowRight className="w-3 h-3" aria-hidden="true" />
+              {targetActor?.label ?? currentStep.actorTarget}
+            </span>
+            <span className="text-slate-500">Frame</span>
+            <span className="text-indigo-300">{packetType}</span>
+            <span className="text-slate-500">Payload</span>
+            <span className="text-slate-300">{payloadBytes} B</span>
+            {isPlaying ? (
+              <span className="text-emerald-400">in transit {Math.round(packetProgress)}%</span>
+            ) : (
+              <span className="text-slate-500">
+                {packetProgress === 0 ? 'ready — press Play' : 'paused'}
+              </span>
+            )}
+          </div>
+
+          {payloadEntries.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {payloadEntries.slice(0, 6).map(([key, value]) => (
+                <span
+                  key={key}
+                  className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-300"
+                >
+                  <span className="text-slate-500">{humanize(key)}=</span>
+                  <span className="text-emerald-300">{formatValue(value)}</span>
+                </span>
+              ))}
+              {payloadEntries.length > 6 && (
+                <span className="text-[10px] font-mono text-slate-500 self-center">
+                  +{payloadEntries.length - 6} more fields
+                </span>
+              )}
             </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setActiveTab('packet')}
-                className="text-xs font-mono px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 flex items-center gap-1.5 transition-colors border border-slate-700"
-              >
-                <Eye className="w-3.5 h-3.5" aria-hidden="true" />
-                <span>Wireshark View</span>
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </div>
-
-      {/* Step Indicators / Interactive Timeline */}
-      <div className="px-6 py-3 bg-slate-950 border-t border-b border-slate-800 flex items-center gap-1.5 overflow-x-auto">
-        {steps.map((s, idx) => (
-          <button
-            key={s.step}
-            type="button"
-            onClick={() => {
-              setIsPlaying(false);
-              setCurrentStepIndex(idx);
-              setPacketProgress(0);
-            }}
-            aria-current={idx === currentStepIndex ? 'step' : undefined}
-            aria-label={`Go to step ${s.step}`}
-            className={`px-3 py-1 rounded-md text-xs font-mono transition-all shrink-0 flex items-center gap-1.5 ${
-              idx === currentStepIndex
-                ? 'bg-indigo-600 text-white font-bold shadow-md'
-                : idx < currentStepIndex
-                ? 'bg-slate-800/80 text-emerald-400 hover:bg-slate-800'
-                : 'bg-slate-900/50 text-slate-500 hover:bg-slate-800/50'
-            }`}
-          >
-            {idx < currentStepIndex && <CheckCircle2 className="w-3 h-3 text-emerald-400" />}
-            <span>Step {s.step}</span>
-          </button>
-        ))}
-      </div>
-
-      {/* Detail & Multi-Tab Inspector Panel */}
-      <div className="p-6 bg-slate-900/70">
-        <div className="flex items-center gap-4 border-b border-slate-800 pb-3 mb-4 overflow-x-auto text-xs font-semibold">
-          <button
-            type="button"
-            onClick={() => setActiveTab('explanation')}
-            className={`pb-1 transition-colors border-b-2 shrink-0 ${
-              activeTab === 'explanation'
-                ? 'border-indigo-500 text-indigo-400'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            Protocol Flow Explanation
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('packet')}
-            className={`pb-1 transition-colors border-b-2 shrink-0 ${
-              activeTab === 'packet'
-                ? 'border-indigo-500 text-indigo-400'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            Wireshark Packet Inspector
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('hex')}
-            className={`pb-1 transition-colors border-b-2 shrink-0 ${
-              activeTab === 'hex'
-                ? 'border-indigo-500 text-indigo-400'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            Hex Stream View
-          </button>
-          {currentStep.codeSnippet && (
-            <button
-              type="button"
-              onClick={() => setActiveTab('nodes')}
-              className={`pb-1 transition-colors border-b-2 shrink-0 ${
-                activeTab === 'nodes'
-                  ? 'border-indigo-500 text-indigo-400'
-                  : 'border-transparent text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Raw Frame / Syntax
-            </button>
           )}
         </div>
+      </div>
 
-        {/* Tab 1: Flow Explanation */}
-        {activeTab === 'explanation' && (
-          <div className="space-y-3 animate-in fade-in duration-200">
-            <h4 className="text-sm font-bold text-white flex items-center gap-2">
-              <span className="w-6 h-6 rounded-md bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-xs font-mono">
-                {currentStep.step}
-              </span>
-              {currentStep.title}
-            </h4>
-            <p className="text-sm text-slate-300 leading-relaxed">
-              {currentStep.description}
-            </p>
-            <div className="p-4 rounded-xl bg-slate-950/90 border border-slate-800 text-xs text-indigo-200 leading-relaxed font-mono">
-              💡 <strong className="text-indigo-300">Under the Hood:</strong> {currentStep.explanation}
+      {/* Timeline */}
+      <div className="px-4 sm:px-6 py-3 bg-slate-950 border-t border-b border-slate-800 flex items-center gap-1.5 overflow-x-auto">
+        {steps.map((step, index) => {
+          const active = index === currentStepIndex;
+          const complete = index < currentStepIndex;
+          return (
+            <button
+              key={step.step}
+              type="button"
+              onClick={() => goToStep(index)}
+              aria-current={active ? 'step' : undefined}
+              aria-label={`Go to step ${step.step}: ${step.title}`}
+              title={step.title}
+              className={`px-3 py-1.5 rounded-md text-xs font-mono transition-all shrink-0 flex items-center gap-1.5 ${
+                active
+                  ? 'bg-indigo-600 text-white font-bold shadow-md'
+                  : complete
+                    ? 'bg-slate-800/80 text-emerald-400 hover:bg-slate-800'
+                    : 'bg-slate-900/50 text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
+              }`}
+            >
+              {complete ? (
+                <CheckCircle2 className="w-3 h-3 text-emerald-400" aria-hidden="true" />
+              ) : (
+                <span className="text-[10px] opacity-70">{step.step}</span>
+              )}
+              <span className="max-w-[150px] truncate">{stepLabel(step.title)}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Inspector */}
+      <div className="p-4 sm:p-6 bg-slate-900/70">
+        <div className="flex items-center gap-1 border-b border-slate-800 pb-3 mb-4 overflow-x-auto">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              aria-pressed={activeTab === tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-colors ${
+                activeTab === tab.id
+                  ? 'bg-indigo-500/15 text-indigo-300 border border-indigo-500/40'
+                  : 'text-slate-400 hover:text-slate-200 border border-transparent'
+              }`}
+            >
+              {tab.icon}
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {activeTab === 'process' && (
+          <div className="space-y-4 animate-in fade-in duration-200">
+            <div className="space-y-2">
+              <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                <span className="w-6 h-6 rounded-md bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-xs font-mono">
+                  {currentStep.step}
+                </span>
+                {currentStep.title}
+              </h4>
+              <p className="text-sm text-slate-300 leading-relaxed">{currentStep.description}</p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-slate-950/90 border border-slate-800 text-xs text-indigo-200 leading-relaxed">
+              <span className="font-bold text-indigo-300">What the protocol is doing: </span>
+              {currentStep.explanation}
+            </div>
+
+            {previousStep && (
+              <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-2 items-center text-xs">
+                <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
+                  <span className="text-[10px] uppercase text-slate-500 block">Previous</span>
+                  <span className="text-slate-300">{previousStep.packetInfo?.type ?? previousStep.title}</span>
+                </div>
+                <ArrowRight className="w-4 h-4 text-slate-600 mx-auto hidden sm:block" aria-hidden="true" />
+                <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/5 p-3">
+                  <span className="text-[10px] uppercase text-indigo-400 block">Now</span>
+                  <span className="text-white">{packetType}</span>
+                </div>
+              </div>
+            )}
+
+            <div>
+              <h5 className="text-[11px] font-mono uppercase tracking-wider text-slate-500 mb-2">
+                Sequence so far
+              </h5>
+              <ol className="rounded-xl border border-slate-800 bg-slate-950/60 divide-y divide-slate-800 overflow-hidden">
+                {steps.map((step, index) => {
+                  const active = index === currentStepIndex;
+                  const complete = index < currentStepIndex;
+                  return (
+                    <li key={step.step}>
+                      <button
+                        type="button"
+                        onClick={() => goToStep(index)}
+                        className={`w-full text-left px-3 py-2 flex items-start gap-3 transition-colors ${
+                          active ? 'bg-indigo-500/10' : 'hover:bg-slate-900/70'
+                        }`}
+                      >
+                        <span
+                          className={`mt-0.5 w-5 h-5 shrink-0 rounded-full border flex items-center justify-center text-[10px] font-mono ${
+                            active
+                              ? 'border-indigo-400 text-indigo-300'
+                              : complete
+                                ? 'border-emerald-500/50 text-emerald-400'
+                                : 'border-slate-700 text-slate-500'
+                          }`}
+                        >
+                          {complete ? <CheckCircle2 className="w-3 h-3" aria-hidden="true" /> : step.step}
+                        </span>
+                        <span className="min-w-0">
+                          <span className={`block text-xs ${active ? 'text-white font-semibold' : 'text-slate-300'}`}>
+                            {stepLabel(step.title)}
+                          </span>
+                          <span className="block text-[10px] font-mono text-slate-500 truncate">
+                            {step.packetInfo?.type ?? 'no frame'} · {step.actorSource} → {step.actorTarget}
+                          </span>
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
+
+            {nextStep && (
+              <p className="text-xs text-slate-400">
+                <span className="text-slate-500">Next: </span>
+                {nextStep.title}
+              </p>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'wire' && (
+          <div className="space-y-4 animate-in fade-in duration-200 text-xs font-mono">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+              <Meta label="Frame" value={packetType} valueClass="text-indigo-300" />
+              <Meta label="Transmitter" value={currentStep.packetInfo?.source ?? sourceActor?.label ?? '—'} valueClass="text-cyan-300" />
+              <Meta label="Receiver" value={currentStep.packetInfo?.destination ?? targetActor?.label ?? '—'} valueClass="text-emerald-300" />
+              <Meta label="Payload" value={`${payloadBytes} bytes`} valueClass="text-slate-300" />
+            </div>
+
+            {currentStep.packetInfo?.summary && (
+              <p className="text-xs text-slate-300 bg-slate-950 border border-slate-800 rounded-xl p-3">
+                {currentStep.packetInfo.summary}
+              </p>
+            )}
+
+            <div className="rounded-xl border border-slate-800 bg-slate-950 overflow-hidden">
+              <div className="px-3 py-2 border-b border-slate-800 bg-slate-900 flex items-center justify-between text-[11px]">
+                <span className="text-slate-400">Decoded fields</span>
+                <span className="text-emerald-400">CRC32 {checksum}</span>
+              </div>
+              {payloadEntries.length > 0 ? (
+                <table className="w-full text-left">
+                  <caption className="sr-only">Decoded payload fields for this step</caption>
+                  <thead className="text-slate-500 text-[10px] uppercase">
+                    <tr>
+                      <th scope="col" className="px-3 py-1.5 font-semibold">Field</th>
+                      <th scope="col" className="px-3 py-1.5 font-semibold">Value</th>
+                      <th scope="col" className="px-3 py-1.5 font-semibold hidden sm:table-cell">Type</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/70">
+                    {payloadEntries.map(([key, value]) => (
+                      <tr key={key} className="align-top">
+                        <th scope="row" className="px-3 py-2 font-normal text-slate-400 whitespace-nowrap">
+                          {humanize(key)}
+                        </th>
+                        <td className="px-3 py-2 text-slate-200 break-all">{formatValue(value)}</td>
+                        <td className="px-3 py-2 text-slate-500 hidden sm:table-cell">{describeType(value)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p className="p-4 text-slate-500">This step carries no decoded payload fields.</p>
+              )}
             </div>
           </div>
         )}
 
-        {/* Tab 2: Wireshark Packet Inspector */}
-        {activeTab === 'packet' && currentStep.packetInfo && (
-          <div className="space-y-4 animate-in fade-in duration-200 font-mono text-xs">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800">
-                <span className="text-slate-500 block text-[10px] uppercase">PROTOCOL FRAME</span>
-                <span className="text-indigo-400 font-bold">{currentStep.packetInfo.type}</span>
-              </div>
-              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800">
-                <span className="text-slate-500 block text-[10px] uppercase">TRANSMITTER</span>
-                <span className="text-cyan-400 truncate block">{currentStep.packetInfo.source}</span>
-              </div>
-              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800">
-                <span className="text-slate-500 block text-[10px] uppercase">RECEIVER</span>
-                <span className="text-emerald-400 truncate block">{currentStep.packetInfo.destination}</span>
-              </div>
-              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800">
-                <span className="text-slate-500 block text-[10px] uppercase">TRANSMISSION ID</span>
-                <span className="text-slate-300">{currentStep.packetInfo.id}</span>
-              </div>
-            </div>
-
-            <div className="rounded-xl bg-slate-950 border border-slate-800 p-4 overflow-x-auto">
-              <div className="text-slate-500 text-[11px] mb-2 flex items-center justify-between">
-                <span>{'// Decoded from the current step payload'}</span>
-                <span className="text-emerald-400">CRC32: {packetChecksum}</span>
-              </div>
-              <pre className="text-slate-300 leading-relaxed">
-                {JSON.stringify(currentStep.packetInfo.payload, null, 2)}
-              </pre>
-            </div>
-          </div>
-        )}
-
-        {/* Tab 3: Hex Dump Stream */}
-        {activeTab === 'hex' && (
-          <div className="rounded-xl bg-slate-950 border border-slate-800 p-4 font-mono text-xs space-y-2 animate-in fade-in duration-200">
+        {activeTab === 'bytes' && (
+          <div className="rounded-xl bg-slate-950 border border-slate-800 p-4 font-mono text-xs space-y-3 animate-in fade-in duration-200">
             <div className="flex flex-wrap items-center justify-between gap-2 text-slate-500 text-[11px]">
-              <span>{'// Hexadecimal dump generated from this step’s payload'}</span>
-              <span className="text-emerald-400">CRC32: {packetChecksum}</span>
+              <span>Hexadecimal dump of this step&apos;s decoded payload</span>
+              <span className="text-emerald-400">CRC32 {checksum} · {payloadBytes} B</span>
             </div>
-            <div className="text-slate-400 leading-loose select-all overflow-x-auto">
-              {packetHexLines.length > 0 ? (
-                packetHexLines.map((line) => (
+
+            {hexLines.length > 0 ? (
+              <div className="text-slate-400 leading-loose select-all overflow-x-auto">
+                {hexLines.map((line) => (
                   <div key={line.offset} className="whitespace-pre">
                     <span className="text-indigo-400">{line.offset}</span>
                     {'  '}
@@ -570,21 +657,80 @@ export default function InteractiveVisualizer({ protocol }: VisualizerProps) {
                     {'  '}
                     <span className="text-slate-500">{line.ascii}</span>
                   </div>
-                ))
-              ) : (
-                <p className="text-slate-500">{'// This step has no payload to encode.'}</p>
-              )}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-slate-500">This step has no payload to encode.</p>
+            )}
+
+            {bitString && (
+              <div className="border-t border-slate-800 pt-3">
+                <span className="block text-[10px] uppercase text-slate-500 mb-1">First bytes as bits</span>
+                <p className="text-slate-400 break-all leading-relaxed">{bitString}</p>
+              </div>
+            )}
           </div>
         )}
 
-        {/* Tab 4: Raw Code / Syntax */}
-        {activeTab === 'nodes' && currentStep.codeSnippet && (
+        {activeTab === 'nodes' && (
+          <div className="space-y-3 animate-in fade-in duration-200">
+            <p className="text-xs text-slate-400">
+              Who participates in this step. The highlighted roles change as the sequence progresses.
+            </p>
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {actors.map((actor) => {
+                const isSource = actor.id === currentStep.actorSource;
+                const isTarget = actor.id === currentStep.actorTarget;
+                return (
+                  <li
+                    key={actor.id}
+                    className={`rounded-xl border p-3 flex items-start gap-3 ${
+                      isSource
+                        ? 'border-indigo-500/40 bg-indigo-500/5'
+                        : isTarget
+                          ? 'border-cyan-500/40 bg-cyan-500/5'
+                          : 'border-slate-800 bg-slate-950/60'
+                    }`}
+                  >
+                    <span className="w-9 h-9 rounded-lg border border-slate-800 bg-slate-950 flex items-center justify-center shrink-0">
+                      {actorIcon(actor.icon)}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-xs font-bold text-white">{actor.label}</span>
+                      <span className="block text-[10px] font-mono text-slate-500">{actor.id}</span>
+                      <span className="block text-[10px] mt-0.5">
+                        {isSource ? (
+                          <span className="text-indigo-300">transmits this frame</span>
+                        ) : isTarget ? (
+                          <span className="text-cyan-300">receives this frame</span>
+                        ) : (
+                          <span className="text-slate-500">not involved in this step</span>
+                        )}
+                      </span>
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+
+        {activeTab === 'syntax' && currentStep.codeSnippet && (
           <div className="rounded-xl bg-slate-950 border border-slate-800 p-4 font-mono text-xs overflow-x-auto animate-in fade-in duration-200">
+            <div className="text-slate-500 text-[11px] mb-2">Illustrative syntax for this step</div>
             <pre className="text-emerald-400 leading-relaxed">{currentStep.codeSnippet}</pre>
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function Meta({ label, value, valueClass }: { label: string; value: string; valueClass: string }) {
+  return (
+    <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 min-w-0">
+      <span className="text-slate-500 block text-[10px] uppercase">{label}</span>
+      <span className={`block truncate ${valueClass}`}>{value}</span>
     </div>
   );
 }

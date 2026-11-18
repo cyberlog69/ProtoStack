@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Terminal, ArrowRight, RefreshCw } from 'lucide-react';
 
 function createIsn(): number {
@@ -26,9 +26,16 @@ function createIsn(): number {
 }
 
 export default function TcpSandbox() {
-  const [clientSeq, setClientSeq] = useState(createIsn);
-  const [serverSeq, setServerSeq] = useState(createIsn);
+  // Deterministic first render so the server and client markup match. Random
+  // per-session ISNs are applied after hydration.
+  const [clientSeq, setClientSeq] = useState(1000);
+  const [serverSeq, setServerSeq] = useState(5000);
   const [handshakeStep, setHandshakeStep] = useState<0 | 1 | 2 | 3>(0);
+
+  useEffect(() => {
+    setClientSeq(createIsn());
+    setServerSeq(createIsn());
+  }, []);
 
   const handleNextHandshake = () => {
     setHandshakeStep((previous) => (previous < 3 ? ((previous + 1) as 0 | 1 | 2 | 3) : previous));

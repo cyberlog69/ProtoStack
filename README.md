@@ -59,9 +59,12 @@ Category counts are derived from the data at build time, so they cannot drift fr
 ### Animated packet flow
 
 - Framer Motion packet propagation with speed controls (0.5×, 1×, 2×), play/pause, replay, and step navigation.
+- The wire and the packet capsule use the same column centres as the nodes, so the travelling frame actually arrives at the endpoint it names.
+- A mechanism strip under the stage shows direction, frame type, payload size and the decoded field chips (flags, sequence numbers, counters).
+- Inspector tabs: **Process** (step explanation, previous → current transition, clickable sequence log), **Wire fields** (field/value/type table), **Bytes** (hex dump and bit string with CRC-32), **Nodes** (participant roles), and **Syntax** when the step has a code sample.
+- Values are labelled as protocol-model data, not a packet capture.
 - Keyboard support: `Space`, `←`, `→` (ignored while typing or focused on a control).
-- `prefers-reduced-motion` is respected globally and inside the animation.
-- Inspector tabs: flow explanation, decoded packet fields, a hex dump generated from the current step payload (with CRC-32), and an optional raw code snippet.
+- `prefers-reduced-motion` parks the capsule at the destination instead of animating it.
 
 ### OSI and TCP/IP layers (`/layers`)
 
