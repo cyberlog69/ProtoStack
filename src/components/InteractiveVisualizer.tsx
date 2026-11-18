@@ -5,6 +5,12 @@ import { useReducedMotion } from 'framer-motion';
 import { Protocol } from '@/types/protocol';
 import { crc32Hex, hexDump, toBitString } from '@/lib/hex';
 import {
+  getHeaderLayer,
+  getProtocolLayout,
+  type HeaderField,
+  type HeaderLayer,
+} from '@/data/headerLayouts';
+import {
   Play,
   Pause,
   RotateCcw,
@@ -32,7 +38,7 @@ import {
   Code2,
 } from 'lucide-react';
 
-type TabId = 'process' | 'wire' | 'bytes' | 'nodes' | 'syntax';
+type TabId = 'process' | 'tree' | 'bytes' | 'nodes' | 'syntax';
 
 const ACTOR_ICONS: Record<string, React.ReactNode> = {
   Laptop: <Laptop className="w-5 h-5 text-indigo-400" aria-hidden="true" />,
@@ -88,6 +94,20 @@ function describeType(value: unknown): string {
 /** Removes a redundant "Step 2:" prefix from titles shown next to a step number. */
 function stepLabel(title: string): string {
   return title.replace(/^step\s*\d+\s*[:.\-–]\s*/i, '').trim() || title;
+}
+
+const normaliseKey = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+function withFieldOffsets(fields: HeaderField[]): { field: HeaderField; bitStart: number }[] {
+  const rows: { field: HeaderField; bitStart: number }[] = [];
+  let cursor = 0;
+
+  for (const field of fields) {
+    rows.push({ field, bitStart: cursor });
+    if (field.bits !== null) cursor += field.bits;
+  }
+
+  return rows;
 }
 
 export default function InteractiveVisualizer({ protocol }: { protocol: Protocol }) {
@@ -217,9 +237,80 @@ export default function InteractiveVisualizer({ protocol }: { protocol: Protocol
   const bitString = toBitString(payloadJson, 16);
   const packetType = currentStep.packetInfo?.type ?? 'Protocol message';
 
+  const layout = getProtocolLayout(protocol.slug);
+  const layerStack = (layout?.layers ?? [])
+    .map((id) => getHeaderLayer(id))
+    .filter((layer): layer is HeaderLayer => Boolean(layer));
+
+  // Many payloads describe endpoints as "address:port". Derive those fields so
+  // the port and address rows in the tree are populated even when the model
+  // payload only carries the endpoint string.
+  const parseEndpoint = (value?: string) => {
+    if (!value) return null;
+    const match = value.trim().match(/^(.*?):(\d{1,5})$/);
+    if (!match) return null;
+    return { host: match[1].replace(/^\[|\]$/g, '').trim(), port: match[2] };
+  };
+  const isIpAddress = (host: string) => /^\d{1,3}(\.\d{1,3}){3}$/.test(host) || host.includes(':');
+
+  const sourceEndpoint = parseEndpoint(currentStep.packetInfo?.source);
+  const targetEndpoint = parseEndpoint(currentStep.packetInfo?.destination);
+  const derived = new Map<string, unknown>();
+  if (sourceEndpoint) derived.set('sourceport', sourceEndpoint.port);
+  if (targetEndpoint) derived.set('destinationport', targetEndpoint.port);
+  if (sourceEndpoint && isIpAddress(sourceEndpoint.host)) {
+    derived.set('sourceaddress', sourceEndpoint.host);
+    derived.set('srcip', sourceEndpoint.host);
+    derived.set('source', sourceEndpoint.host);
+    derived.set('src', sourceEndpoint.host);
+  }
+  if (targetEndpoint && isIpAddress(targetEndpoint.host)) {
+    derived.set('destinationaddress', targetEndpoint.host);
+    derived.set('dstip', targetEndpoint.host);
+    derived.set('destination', targetEndpoint.host);
+    derived.set('dst', targetEndpoint.host);
+  }
+
+  const payloadLookup = new Map(payloadEntries.map(([key, value]) => [normaliseKey(key), value]));
+  for (const [key, value] of derived) payloadLookup.set(key, value);
+  const resolveValue = (field: HeaderField) => {
+    // 1-bit flags are often summarised in a single comma-separated "flags"
+    // string; match whole tokens so "STANDARD" cannot match "RD".
+    if (field.bits === 1 && payloadLookup.has('flags')) {
+      const flags = payloadLookup.get('flags');
+      if (typeof flags === 'string') {
+        const tokens = flags
+          .split(/[,\s+/]+/)
+          .map((token) => token.trim().toUpperCase())
+          .filter(Boolean);
+        return {
+          found: true,
+          value: tokens.includes(field.name.toUpperCase()) ? 'set' : 'not set',
+        };
+      }
+    }
+
+    // Explicit aliases win; an empty list means the field is not bound by name
+    // (prevents generic names such as "Flags" or "ACK" matching another layer).
+    const candidates = field.aliases ?? [field.name];
+    for (const candidate of candidates) {
+      const key = normaliseKey(candidate);
+      if (payloadLookup.has(key)) return { found: true, value: payloadLookup.get(key) };
+    }
+    return { found: false, value: undefined };
+  };
+
+  const layerRows: { layer: HeaderLayer; start: number | null }[] = [];
+  let headerOffset = 0;
+  for (const layer of layerStack) {
+    layerRows.push({ layer, start: layer.bytes === null ? null : headerOffset });
+    if (layer.bytes !== null) headerOffset += layer.bytes;
+  }
+  const fixedHeaderBytes = headerOffset;
+
   const tabs: { id: TabId; label: string; icon: React.ReactNode }[] = [
     { id: 'process', label: 'Process', icon: <ListOrdered className="w-3.5 h-3.5" aria-hidden="true" /> },
-    { id: 'wire', label: 'Wire fields', icon: <Table2 className="w-3.5 h-3.5" aria-hidden="true" /> },
+    { id: 'tree', label: 'Protocol tree', icon: <Table2 className="w-3.5 h-3.5" aria-hidden="true" /> },
     { id: 'bytes', label: 'Bytes', icon: <Binary className="w-3.5 h-3.5" aria-hidden="true" /> },
     { id: 'nodes', label: 'Nodes', icon: <Boxes className="w-3.5 h-3.5" aria-hidden="true" /> },
     ...(currentStep.codeSnippet
@@ -591,52 +682,150 @@ export default function InteractiveVisualizer({ protocol }: { protocol: Protocol
           </div>
         )}
 
-        {activeTab === 'wire' && (
+        {activeTab === 'tree' && (
           <div className="space-y-4 animate-in fade-in duration-200 text-xs font-mono">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
-              <Meta label="Frame" value={packetType} valueClass="text-indigo-300" />
-              <Meta label="Transmitter" value={currentStep.packetInfo?.source ?? sourceActor?.label ?? '—'} valueClass="text-cyan-300" />
-              <Meta label="Receiver" value={currentStep.packetInfo?.destination ?? targetActor?.label ?? '—'} valueClass="text-emerald-300" />
-              <Meta label="Payload" value={`${payloadBytes} bytes`} valueClass="text-slate-300" />
-            </div>
+            {layerStack.length > 0 ? (
+              <>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {layerRows.map(({ layer, start }, index) => (
+                    <span
+                      key={`${layer.id}-${index}`}
+                      className="text-[10px] px-2 py-0.5 rounded border bg-slate-950 text-slate-300 border-slate-800"
+                    >
+                      <span className="text-indigo-300">{layer.name}</span>
+                      <span className="text-slate-500">
+                        {' '}
+                        · {layer.bytes === null ? 'var' : `${layer.bytes} B`}
+                        {start !== null ? ` @${start}` : ''}
+                      </span>
+                    </span>
+                  ))}
+                  <span className="text-[10px] px-2 py-0.5 rounded border bg-slate-950 text-slate-400 border-slate-800">
+                    payload · {payloadBytes} B
+                  </span>
+                </div>
 
-            {currentStep.packetInfo?.summary && (
-              <p className="text-xs text-slate-300 bg-slate-950 border border-slate-800 rounded-xl p-3">
-                {currentStep.packetInfo.summary}
-              </p>
+                {layerRows.map(({ layer, start }, layerIndex) => {
+                  return (
+                    <details
+                      key={`${layer.id}-${layerIndex}`}
+                      open={layerIndex === layerRows.length - 1}
+                      className="rounded-xl border border-slate-800 bg-slate-950 overflow-hidden"
+                    >
+                      <summary className="px-3 py-2 bg-slate-900 cursor-pointer flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                        <span className="text-slate-200 font-bold">{layer.name}</span>
+                        <span className="text-slate-500">
+                          {start === null ? 'variable offset' : `offset ${start} B`} ·{' '}
+                          {layer.bytes === null ? 'variable length' : `${layer.bytes} bytes`}
+                        </span>
+                      </summary>
+
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                          <caption className="sr-only">{layer.name} fields</caption>
+                          <thead className="text-slate-500 text-[10px] uppercase border-b border-slate-800">
+                            <tr>
+                              <th scope="col" className="px-3 py-1.5 font-semibold">Field</th>
+                              <th scope="col" className="px-3 py-1.5 font-semibold">Bits</th>
+                              <th scope="col" className="px-3 py-1.5 font-semibold hidden sm:table-cell">Offset</th>
+                              <th scope="col" className="px-3 py-1.5 font-semibold">Value</th>
+                              <th scope="col" className="px-3 py-1.5 font-semibold hidden lg:table-cell">Meaning</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-800/70">
+                            {withFieldOffsets(layer.fields).map(({ field, bitStart }) => {
+                              const { found, value } = resolveValue(field);
+                              const bits = field.bits;
+                              const byteStart = start === null ? null : start + Math.floor(bitStart / 8);
+
+                              return (
+                                <tr key={field.name} className={found ? 'bg-emerald-500/[0.04]' : ''}>
+                                  <th scope="row" className="px-3 py-2 font-normal text-slate-300 whitespace-nowrap">
+                                    {field.name}
+                                  </th>
+                                  <td className="px-3 py-2 text-slate-500">{bits === null ? 'var' : bits}</td>
+                                  <td className="px-3 py-2 text-slate-500 hidden sm:table-cell whitespace-nowrap">
+                                    {byteStart === null ? '—' : `${byteStart} B`}
+                                    {bits !== null && (
+                                      <span className="text-slate-600"> · {bitStart}–{bitStart + bits - 1}</span>
+                                    )}
+                                  </td>
+                                  <td className="px-3 py-2">
+                                    {found ? (
+                                      <span className="text-emerald-300 break-all">{formatValue(value)}</span>
+                                    ) : (
+                                      <span className="text-slate-600">not in this step</span>
+                                    )}
+                                  </td>
+                                  <td className="px-3 py-2 text-slate-500 hidden lg:table-cell">{field.description}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {layer.note && (
+                        <p className="px-3 py-2 border-t border-slate-800 text-[10px] text-slate-500">{layer.note}</p>
+                      )}
+                    </details>
+                  );
+                })}
+
+                <div className="rounded-xl border border-slate-800 bg-slate-950 p-3 text-[11px] text-slate-400 space-y-1">
+                  <p>
+                    Fixed headers <span className="text-slate-200">{fixedHeaderBytes} B</span> · decoded payload{' '}
+                    <span className="text-slate-200">{payloadBytes} B</span>
+                    {fixedHeaderBytes > 0 && (
+                      <>
+                        {' '}· model size ≈ <span className="text-slate-200">{fixedHeaderBytes + payloadBytes} B</span>
+                      </>
+                    )}
+                  </p>
+                  <p>
+                    Bit ranges describe the standard header layout. Values are bound from this step&apos;s model
+                    payload; fields without a matching value stay blank.
+                  </p>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-[11px] text-slate-500">
+                  No byte-level layout is defined for {protocol.name}; showing the decoded model fields for this step.
+                </p>
+                <div className="rounded-xl border border-slate-800 bg-slate-950 overflow-hidden">
+                  <div className="px-3 py-2 border-b border-slate-800 bg-slate-900 flex items-center justify-between text-[11px]">
+                    <span className="text-slate-400">Decoded fields</span>
+                    <span className="text-emerald-400">CRC32 {checksum}</span>
+                  </div>
+                  {payloadEntries.length > 0 ? (
+                    <table className="w-full text-left">
+                      <caption className="sr-only">Decoded payload fields for this step</caption>
+                      <thead className="text-slate-500 text-[10px] uppercase">
+                        <tr>
+                          <th scope="col" className="px-3 py-1.5 font-semibold">Field</th>
+                          <th scope="col" className="px-3 py-1.5 font-semibold">Value</th>
+                          <th scope="col" className="px-3 py-1.5 font-semibold hidden sm:table-cell">Type</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/70">
+                        {payloadEntries.map(([key, value]) => (
+                          <tr key={key} className="align-top">
+                            <th scope="row" className="px-3 py-2 font-normal text-slate-400 whitespace-nowrap">
+                              {humanize(key)}
+                            </th>
+                            <td className="px-3 py-2 text-slate-200 break-all">{formatValue(value)}</td>
+                            <td className="px-3 py-2 text-slate-500 hidden sm:table-cell">{describeType(value)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <p className="p-4 text-slate-500">This step carries no decoded payload fields.</p>
+                  )}
+                </div>
+              </>
             )}
-
-            <div className="rounded-xl border border-slate-800 bg-slate-950 overflow-hidden">
-              <div className="px-3 py-2 border-b border-slate-800 bg-slate-900 flex items-center justify-between text-[11px]">
-                <span className="text-slate-400">Decoded fields</span>
-                <span className="text-emerald-400">CRC32 {checksum}</span>
-              </div>
-              {payloadEntries.length > 0 ? (
-                <table className="w-full text-left">
-                  <caption className="sr-only">Decoded payload fields for this step</caption>
-                  <thead className="text-slate-500 text-[10px] uppercase">
-                    <tr>
-                      <th scope="col" className="px-3 py-1.5 font-semibold">Field</th>
-                      <th scope="col" className="px-3 py-1.5 font-semibold">Value</th>
-                      <th scope="col" className="px-3 py-1.5 font-semibold hidden sm:table-cell">Type</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800/70">
-                    {payloadEntries.map(([key, value]) => (
-                      <tr key={key} className="align-top">
-                        <th scope="row" className="px-3 py-2 font-normal text-slate-400 whitespace-nowrap">
-                          {humanize(key)}
-                        </th>
-                        <td className="px-3 py-2 text-slate-200 break-all">{formatValue(value)}</td>
-                        <td className="px-3 py-2 text-slate-500 hidden sm:table-cell">{describeType(value)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <p className="p-4 text-slate-500">This step carries no decoded payload fields.</p>
-              )}
-            </div>
           </div>
         )}
 
@@ -726,11 +915,3 @@ export default function InteractiveVisualizer({ protocol }: { protocol: Protocol
   );
 }
 
-function Meta({ label, value, valueClass }: { label: string; value: string; valueClass: string }) {
-  return (
-    <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 min-w-0">
-      <span className="text-slate-500 block text-[10px] uppercase">{label}</span>
-      <span className={`block truncate ${valueClass}`}>{value}</span>
-    </div>
-  );
-}
