@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { PROTOCOLS } from '@/data/protocols';
 import { getCoverage } from '@/data/coverage';
+import { getAttacks } from '@/data/attacks';
 import ProtocolDetail from '@/components/ProtocolDetail';
 import { SITE_NAME, SITE_URL } from '@/lib/site';
 
@@ -92,6 +93,7 @@ export default async function ProtocolPage({ params }: ProtocolPageProps) {
         difficulty={coverage?.difficulty ?? null}
         lastReviewed={coverage?.lastReviewed ?? null}
         prerequisites={prerequisites}
+        attacks={getAttacks(protocol.slug)}
       />
     </>
   );

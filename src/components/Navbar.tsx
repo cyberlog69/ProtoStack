@@ -12,7 +12,7 @@ import {
   Brain,
   Award,
   Compass,
-  Map as MapIcon,
+  ShieldAlert,
   Menu,
   X,
 } from 'lucide-react';
@@ -24,7 +24,7 @@ const NAV_ITEMS = [
   { href: '/#protocols', label: 'Protocols', icon: BookOpen, color: 'text-indigo-400' },
   { href: '/layers', label: 'Layers', icon: Layers, color: 'text-purple-400' },
   { href: '/compare', label: 'Compare', icon: ArrowLeftRight, color: 'text-cyan-400' },
-  { href: '/coverage', label: 'Coverage', icon: MapIcon, color: 'text-rose-400' },
+  { href: '/attacks', label: 'Attacks', icon: ShieldAlert, color: 'text-rose-400' },
   { href: '/quiz', label: 'Quizzes', icon: Brain, color: 'text-amber-400' },
   { href: '/dashboard', label: 'Dashboard', icon: Award, color: 'text-emerald-400' },
 ];

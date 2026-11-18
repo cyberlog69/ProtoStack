@@ -11,6 +11,7 @@ import {
 } from '@/data/coverage';
 import { getCategoryBadge, getDifficultyBadge, getLayerColor, getTierBadge } from '@/lib/utils';
 import { REFERENCE_ENTRIES } from '@/data/reference';
+import { ATTACKS } from '@/data/attacks';
 import { ArrowRight, CheckCircle2, CircleDashed, Compass, Map, ShieldCheck, TriangleAlert } from 'lucide-react';
 
 export const metadata: Metadata = {
@@ -387,6 +388,11 @@ export default function CoveragePage() {
               href: '/reference',
               label: 'Reference registry',
               detail: `${referenceCount} compact cards for standards without a full lesson.`,
+            },
+            {
+              href: '/attacks',
+              label: 'Attack library',
+              detail: `${ATTACKS.length} simulated attack scenarios with detection and defences.`,
             },
             {
               href: '/glossary',

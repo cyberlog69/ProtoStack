@@ -56,6 +56,13 @@ Category counts are derived from the data at build time, so they cannot drift fr
 - **`/glossary`** — 116 networking terms defined in plain language, searchable and filterable by letter.
 - **`/standards`** — how to read an RFC: document statuses, MUST/SHOULD/MAY, document anatomy, errata, a seven-step reading method and a first-documents exercise.
 
+### Threat models and simulated attacks (`/attacks`)
+
+- Every one of the 80 protocols has a threat model: an attack scenario with three attacker steps, the impact, per-step detection guidance and at least two defences.
+- The attack library covers eight categories: spoofing, interception, injection, denial of service, credential attacks, downgrade, feature abuse and reconnaissance.
+- Each protocol page includes an **attack simulation** panel: step through the attack, read what a defender can see, then toggle mitigations to see which precondition the control removes.
+- Scenarios are conceptual and run entirely in the browser. They contain no exploit code, payloads or tooling, and the UI states that testing requires explicit authorisation.
+
 ### Animated packet flow
 
 - Framer Motion packet propagation with speed controls (0.5×, 1×, 2×), play/pause, replay, and step navigation.
@@ -187,6 +194,7 @@ ProtoStack/
 │   │   ├── compare/
 │   │   │   ├── page.tsx                  # comparison index
 │   │   │   └── [a]/[b]/page.tsx          # validated, statically generated comparisons
+│   │   ├── attacks/page.tsx              # filterable attack library
 │   │   ├── coverage/page.tsx             # tiered coverage matrix, catalog and roadmap
 │   │   ├── glossary/page.tsx             # searchable terminology browser
 │   │   ├── reference/page.tsx            # filterable reference-card registry
@@ -203,6 +211,8 @@ ProtoStack/
 │   │   └── globals.css                   # focus styles, reduced motion, scrollbars
 │   ├── components/
 │   │   ├── ProtocolDetail.tsx            # client shell for a protocol page
+│   │   ├── AttackLab.tsx                 # per-protocol attack simulation
+│   │   ├── AttackBrowser.tsx             # attack library filters
 │   │   ├── CurriculumBoard.tsx           # Start Here path with local progress
 │   │   ├── GlossaryBrowser.tsx           # glossary search and letter filter
 │   │   ├── ReferenceBrowser.tsx          # reference-card filters
@@ -214,6 +224,8 @@ ProtoStack/
 │   │   └── sandboxes/                    # DNS, HTTP, MQTT, TCP, WebSocket, generic
 │   ├── context/ProgressContext.tsx       # typed localStorage progress state
 │   ├── data/
+│   │   ├── attacks.ts                    # 80 attack scenarios and defences
+│   │   ├── attackCategories.ts           # attack taxonomy
 │   │   ├── comparisons.ts
 │   │   ├── coverage.ts                   # tiers, difficulty, prerequisites, roadmap
 │   │   ├── curriculum.ts                 # ordered beginner path
@@ -235,6 +247,7 @@ ProtoStack/
 │   ├── coverage.test.ts                  # tiers, prerequisites, roadmap
 │   ├── content.test.ts                   # curriculum, glossary and reference registry
 │   ├── layouts.test.ts                   # header bit widths and protocol stacks
+│   ├── attacks.test.ts                   # attack coverage and scenario shape
 │   └── url-safety.test.ts                # SSRF-oriented URL validation
 ├── eslint.config.mjs
 ├── next.config.mjs                       # security headers, CSP, standalone output

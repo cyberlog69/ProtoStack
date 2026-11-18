@@ -6,6 +6,8 @@ import dynamic from 'next/dynamic';
 import { Protocol } from '@/types/protocol';
 import { getLayerColor, getCategoryBadge, getDifficultyBadge, getTierBadge } from '@/lib/utils';
 import { useProgress } from '@/context/ProgressContext';
+import type { AttackScenario } from '@/data/attacks';
+import AttackLab from '@/components/AttackLab';
 import {
   ArrowLeft,
   ArrowRight,
@@ -17,6 +19,7 @@ import {
   Globe,
   Bookmark,
   CheckCircle2,
+  ShieldAlert,
 } from 'lucide-react';
 
 const InteractiveVisualizer = dynamic(() => import('@/components/InteractiveVisualizer'), {
@@ -57,6 +60,7 @@ interface ProtocolDetailProps {
   difficulty: string | null;
   lastReviewed: string | null;
   prerequisites: { slug: string; name: string }[];
+  attacks: AttackScenario[];
 }
 
 export default function ProtocolDetail({
@@ -67,6 +71,7 @@ export default function ProtocolDetail({
   difficulty,
   lastReviewed,
   prerequisites,
+  attacks,
 }: ProtocolDetailProps) {
   const { toggleLearned, toggleBookmark, isLearned, isBookmarked } = useProgress();
 
@@ -245,7 +250,20 @@ export default function ProtocolDetail({
         {renderSandbox()}
       </section>
 
-      {/* SECTION 3: Deep Dive Theory & Specs */}
+      {/* SECTION 3: Threat Model & Attack Simulation */}
+      {attacks.length > 0 && (
+        <section id="attacks" className="space-y-4 scroll-mt-24">
+          <SectionHeading
+            icon={<ShieldAlert className="w-4 h-4 text-rose-400" aria-hidden="true" />}
+            iconClassName="bg-rose-600/20 border-rose-500/30"
+            title="Threat Model & Attack Simulation"
+            subtitle="How this protocol is attacked in practice, what defenders can see, and which control stops it."
+          />
+          <AttackLab protocolName={protocol.name} attacks={attacks} />
+        </section>
+      )}
+
+      {/* SECTION 4: Deep Dive Theory & Specs */}
       <section className="space-y-6">
         <SectionHeading
           icon={<BookOpen className="w-4 h-4 text-cyan-400" aria-hidden="true" />}
