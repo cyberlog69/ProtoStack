@@ -101,6 +101,16 @@ GHCR packages are private by default even when the repository is public. To pull
 anonymously, open the package settings on GitHub and change its visibility to
 public, or authenticate with a personal access token that has `read:packages`.
 
+### Continuous Deployment (CD) to Oracle VM
+
+`.github/workflows/container.yml` automatically builds the multi-arch container image and deploys updates to the Oracle VM via SSH on pushes to `main`.
+
+To enable automatic deployment, configure these GitHub repository secrets under **Settings** ➔ **Secrets and variables** ➔ **Actions**:
+
+- `ORACLE_VM_HOST`: The public IP or domain of your VM (e.g. `protostack.online` or `68.233.97.9`).
+- `ORACLE_VM_USER`: The SSH user (defaults to `ubuntu`).
+- `ORACLE_VM_KEY`: The private SSH key used to connect to the VM.
+
 ---
 
 ## Podman

@@ -61,7 +61,34 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000' }}
+            NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL || 'https://protostack.online' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           provenance: false
+
+  deploy:
+    name: Deploy to Oracle VM
+    needs: publish
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Deploy update via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.ORACLE_VM_HOST }}
+          username: ${{ secrets.ORACLE_VM_USER || 'ubuntu' }}
+          key: ${{ secrets.ORACLE_VM_KEY }}
+          script: |
+            podman pull ghcr.io/cyberlog69/protostack:latest
+            if systemctl --user is-active protostack >/dev/null 2>&1; then
+              systemctl --user restart protostack
+            elif podman ps -q --filter "name=protostack" | grep -q .; then
+              podman stop protostack
+              podman rm protostack
+              podman run -d --name protostack --restart always -p 8080:3000 \
+                -e HTTP_TEST_ALLOWED_HOSTS=example.com,www.example.com,httpbin.org,jsonplaceholder.typicode.com \
+                ghcr.io/cyberlog69/protostack:latest
+            else
+              systemctl --user restart protostack || true
+            fi
+            echo "ProtoStack updated successfully on Oracle VM."
