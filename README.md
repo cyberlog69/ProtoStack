@@ -58,9 +58,13 @@ Category counts are derived from the data at build time, so they cannot drift fr
 
 ### Threat models and simulated attacks (`/attacks`)
 
-- Every one of the 80 protocols has a threat model: an attack scenario with three attacker steps, the impact, per-step detection guidance and at least two defences.
-- The attack library covers eight categories: spoofing, interception, injection, denial of service, credential attacks, downgrade, feature abuse and reconnaissance.
-- Each protocol page includes an **attack simulation** panel: step through the attack, read what a defender can see, then toggle mitigations to see which precondition the control removes.
+- Every one of the 80 protocols has a threat model: three attacker steps (precondition, action, impact), per-step detection guidance, the impact and at least two defences.
+- The library covers eight categories: spoofing, interception, injection, denial of service, credential attacks, downgrade, feature abuse and reconnaissance.
+- Each scenario carries a teaching difficulty (1–3 stars) and a three-phase timeline; the library can filter and sort by difficulty.
+- Each protocol page includes an **attack simulation** panel: an animated attacker → target flow, a phase timeline, scoped keyboard shortcuts (`←` `→` `M` `R`), auto-play, and a mitigation toggle that shows the blocked state.
+- On the final step, a two-question **defender challenge** checks the detection signal and the documented control. Best scores are stored locally through the shared progress store, and completed scenarios are marked in the library.
+- MITRE ATT&CK® badges are shown only for reviewed mappings from a small, tested allowlist; there are no invented CVSS scores or CVE IDs.
+- A **frame anatomy** panel shows the protocol's real header fields, bit widths and offsets. Attack packets themselves are not reproduced.
 - Scenarios are conceptual and run entirely in the browser. They contain no exploit code, payloads or tooling, and the UI states that testing requires explicit authorisation.
 
 ### Animated packet flow
@@ -213,6 +217,10 @@ ProtoStack/
 │   │   ├── ProtocolDetail.tsx            # client shell for a protocol page
 │   │   ├── AttackLab.tsx                 # per-protocol attack simulation
 │   │   ├── AttackBrowser.tsx             # attack library filters
+│   │   ├── AttackFrameAnatomy.tsx        # protocol header layout for an attack
+│   │   ├── PacketFlowAnimation.tsx       # animated attacker → target flow
+│   │   ├── KillChainBar.tsx              # three-phase attack timeline
+│   │   ├── DefenderChallenge.tsx         # scored detection/mitigation quiz
 │   │   ├── CurriculumBoard.tsx           # Start Here path with local progress
 │   │   ├── GlossaryBrowser.tsx           # glossary search and letter filter
 │   │   ├── ReferenceBrowser.tsx          # reference-card filters
@@ -226,6 +234,9 @@ ProtoStack/
 │   ├── data/
 │   │   ├── attacks.ts                    # 80 attack scenarios and defences
 │   │   ├── attackCategories.ts           # attack taxonomy
+│   │   ├── attackDifficulty.ts           # teaching difficulty 1-3
+│   │   ├── attackPhases.ts               # precondition / action / impact
+│   │   ├── mitre.ts                      # reviewed ATT&CK allowlist and mappings
 │   │   ├── comparisons.ts
 │   │   ├── coverage.ts                   # tiers, difficulty, prerequisites, roadmap
 │   │   ├── curriculum.ts                 # ordered beginner path
@@ -247,7 +258,7 @@ ProtoStack/
 │   ├── coverage.test.ts                  # tiers, prerequisites, roadmap
 │   ├── content.test.ts                   # curriculum, glossary and reference registry
 │   ├── layouts.test.ts                   # header bit widths and protocol stacks
-│   ├── attacks.test.ts                   # attack coverage and scenario shape
+│   ├── attacks.test.ts                   # attack coverage, phases, MITRE and difficulty
 │   └── url-safety.test.ts                # SSRF-oriented URL validation
 ├── eslint.config.mjs
 ├── next.config.mjs                       # security headers, CSP, standalone output

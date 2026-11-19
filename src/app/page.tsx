@@ -335,11 +335,6 @@ export default function HomePage() {
                   <span className="text-xs font-mono text-amber-400">
                     {'★'.repeat(featured.difficulty)}{'☆'.repeat(3 - featured.difficulty)}
                   </span>
-                  {featured.cvssScore !== undefined && (
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded border border-orange-500/40 text-orange-300 bg-orange-500/10 font-bold">
-                      CVSS {featured.cvssScore.toFixed(1)}
-                    </span>
-                  )}
                 </div>
                 <p className="text-sm text-slate-300 leading-relaxed max-w-3xl">{featured.summary}</p>
               </div>

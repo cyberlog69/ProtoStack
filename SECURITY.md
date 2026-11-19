@@ -60,6 +60,7 @@ Used only when the browser requests an external URL from the HTTP sandbox.
 ### Browser-side simulations
 
 - MQTT topic matching, retained messages, the TCP state machine, the generic step runner, and the simulated WebSocket session run entirely in the browser. They do not open broker or socket connections, and the UI labels them as simulated.
+- Attack simulations are conceptual defender training. They contain no exploit code or payloads, execute no network operations, and state that testing requires authorisation.
 - The WebSocket sandbox can optionally open a real connection to `wss://echo.websocket.events`. Errors are surfaced instead of being reported as a successful connection.
 - Progress, quiz results, and bookmarks are stored in `localStorage` and are never uploaded.
 

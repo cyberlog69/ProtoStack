@@ -1,9 +1,10 @@
 'use client';
 
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Skull, Shield, ShieldCheck, ShieldAlert } from 'lucide-react';
 import type { AttackStep } from '@/data/attacks';
+import { attackPhase } from '@/data/attackPhases';
 
 interface PacketFlowAnimationProps {
   step: AttackStep;
@@ -12,8 +13,9 @@ interface PacketFlowAnimationProps {
 }
 
 export default function PacketFlowAnimation({ step, mitigated, protocolName }: PacketFlowAnimationProps) {
-  const direction = step.trafficDirection ?? 'attacker→target';
-  const isTargetSender = direction === 'target→attacker';
+  const reduceMotion = useReducedMotion();
+  const direction = step.trafficDirection ?? 'attacker-to-target';
+  const isTargetSender = direction === 'target-to-attacker';
   const isBroadcast = direction === 'broadcast';
 
   return (
@@ -44,7 +46,7 @@ export default function PacketFlowAnimation({ step, mitigated, protocolName }: P
           <div>
             <span className="block text-xs font-bold text-white">Attacker</span>
             <span className="block text-[10px] font-mono text-rose-400/80">
-              {step.phase.toUpperCase()}
+              {(attackPhase(step.phase)?.label ?? step.phase).toUpperCase()}
             </span>
           </div>
         </div>
@@ -76,7 +78,7 @@ export default function PacketFlowAnimation({ step, mitigated, protocolName }: P
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0, opacity: 0 }}
-                transition={{ type: 'spring', damping: 15 }}
+                transition={reduceMotion ? { duration: 0 } : { type: 'spring', damping: 15 }}
                 className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center"
               >
                 <div className="px-3 py-1.5 rounded-full bg-emerald-500 border border-emerald-300 text-slate-950 font-mono text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-[0_0_15px_rgba(16,185,129,0.5)]">
@@ -97,12 +99,12 @@ export default function PacketFlowAnimation({ step, mitigated, protocolName }: P
                 opacity: 0,
                 scale: 0.8,
               }}
-              animate={{
+              animate={reduceMotion ? { left: '50%', opacity: 1, scale: 1 } : {
                 left: isTargetSender ? ['85%', '15%'] : ['10%', '85%'],
                 opacity: [0, 1, 1, 0.2],
                 scale: [0.8, 1.2, 1, 0.8],
               }}
-              transition={{
+              transition={reduceMotion ? { duration: 0 } : {
                 duration: 1.8,
                 repeat: Infinity,
                 ease: 'easeInOut',
@@ -110,7 +112,7 @@ export default function PacketFlowAnimation({ step, mitigated, protocolName }: P
             >
               <div className="px-2 py-0.5 rounded-md bg-rose-500 text-white font-mono text-[9px] font-bold shadow-[0_0_12px_rgba(244,63,94,0.8)] border border-rose-300 flex items-center gap-1">
                 <ShieldAlert className="w-2.5 h-2.5" />
-                <span>{step.phase}</span>
+                <span>{attackPhase(step.phase)?.label ?? step.phase}</span>
               </div>
             </motion.div>
           )}

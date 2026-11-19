@@ -4,6 +4,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import MotionProvider from '@/components/MotionProvider';
 import { ProgressProvider } from '@/context/ProgressContext';
+import { ATTACKS } from '@/data/attacks';
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/site';
 
 export const metadata: Metadata = {
@@ -56,7 +57,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </a>
         <MotionProvider>
           <ProgressProvider>
-            <Navbar />
+            <Navbar attackCount={ATTACKS.length} />
             <main id="main-content" tabIndex={-1} className="flex-1 focus:outline-none">
               {children}
             </main>

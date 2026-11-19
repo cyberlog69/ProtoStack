@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { PROTOCOLS } from '@/data/protocols';
 import { getCoverage } from '@/data/coverage';
-import { getAttacks } from '@/data/attacks';
+import { getAttacks, getDefenceDistractors } from '@/data/attacks';
 import ProtocolDetail from '@/components/ProtocolDetail';
 import { SITE_NAME, SITE_URL } from '@/lib/site';
 
@@ -58,6 +58,8 @@ export default async function ProtocolPage({ params }: ProtocolPageProps) {
   const next = index < PROTOCOLS.length - 1 ? PROTOCOLS[index + 1] : null;
 
   const coverage = getCoverage(protocol.slug);
+  const attacks = getAttacks(protocol.slug);
+  const attackDistractors = attacks[0] ? getDefenceDistractors(attacks[0].id) : [];
   const prerequisites = (coverage?.prerequisites ?? [])
     .map((slug) => PROTOCOLS.find((entry) => entry.slug === slug))
     .filter((entry): entry is (typeof PROTOCOLS)[number] => Boolean(entry))
@@ -93,7 +95,8 @@ export default async function ProtocolPage({ params }: ProtocolPageProps) {
         difficulty={coverage?.difficulty ?? null}
         lastReviewed={coverage?.lastReviewed ?? null}
         prerequisites={prerequisites}
-        attacks={getAttacks(protocol.slug)}
+        attacks={attacks}
+        attackDistractors={attackDistractors}
       />
     </>
   );

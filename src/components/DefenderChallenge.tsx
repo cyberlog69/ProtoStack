@@ -1,12 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Trophy, CheckCircle2, XCircle, RotateCcw, ShieldCheck } from 'lucide-react';
 import type { AttackScenario } from '@/data/attacks';
+import { useProgress } from '@/context/ProgressContext';
 
 interface DefenderChallengeProps {
   attack: AttackScenario;
-  onComplete?: (score: number) => void;
+  /** Two controls from other scenarios, used as plausible wrong answers. */
+  distractors: string[];
 }
 
 interface Question {
@@ -16,199 +18,181 @@ interface Question {
   explanation: string;
 }
 
-export default function DefenderChallenge({ attack, onComplete }: DefenderChallengeProps) {
-  const [selectedAnswers, setSelectedAnswers] = useState<(number | null)[]>([null, null]);
-  const [submitted, setSubmitted] = useState(false);
-  const [storedScore, setStoredScore] = useState<number | null>(null);
+const hashString = (value: string) => {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = Math.imul(hash ^ value.charCodeAt(index), 16777619);
+  }
+  return hash >>> 0;
+};
 
-  // Load existing score from localStorage on mount
+const seededShuffle = <T,>(items: T[], seed: number): T[] => {
+  const result = [...items];
+  let state = seed || 1;
+  for (let index = result.length - 1; index > 0; index -= 1) {
+    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+    const swap = state % (index + 1);
+    [result[index], result[swap]] = [result[swap], result[index]];
+  }
+  return result;
+};
+
+export default function DefenderChallenge({ attack, distractors }: DefenderChallengeProps) {
+  const { attackScores, saveAttackScore } = useProgress();
+  const [selected, setSelected] = useState<(number | null)[]>([null, null]);
+  const [submitted, setSubmitted] = useState(false);
+
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(`defender-score-${attack.id}`);
-      if (saved !== null) {
-        setStoredScore(parseInt(saved, 10));
-      }
-    } catch {
-      // ignore in SSR or restricted storage
-    }
+    setSelected([null, null]);
+    setSubmitted(false);
   }, [attack.id]);
 
-  // Generate deterministic questions based on attack data
-  const lastStep = attack.steps[attack.steps.length - 1];
-  const questions: Question[] = [
-    {
-      prompt: 'Which telemetry or signal would alert a defender that this attack is underway?',
-      options: [
-        lastStep.detection,
-        'Standard TLS handshake completion with valid certificates',
-        'Routine DHCP ACK packets with default lease durations',
-      ],
-      correctIndex: 0,
-      explanation: lastStep.detection,
-    },
-    {
-      prompt: 'Which primary security control removes the precondition this attack depends on?',
-      options: [
-        'Enabling full disk encryption on employee endpoints',
-        attack.mitigations[0] ?? 'Strict cryptographic verification and access controls',
-        'Increasing default TCP receive window buffer size',
-      ],
-      correctIndex: 1,
-      explanation: attack.mitigations[0] ?? 'Enforcing strict protocol defenses at the boundary.',
-    },
-  ];
+  const questions = useMemo<Question[]>(() => {
+    const actionStep =
+      attack.steps.find((step) => step.phase === 'action') ?? attack.steps[1] ?? attack.steps[0];
 
-  const handleSelect = (questionIndex: number, optionIndex: number) => {
-    if (submitted) return;
-    setSelectedAnswers((prev) => {
-      const next = [...prev];
-      next[questionIndex] = optionIndex;
-      return next;
-    });
-  };
+    const detectionOptions = seededShuffle(
+      attack.steps.map((step) => step.title),
+      hashString(attack.id),
+    );
 
-  const calculateScore = () => {
-    let score = 0;
-    questions.forEach((q, idx) => {
-      if (selectedAnswers[idx] === q.correctIndex) {
-        score += 1;
-      }
-    });
-    return score;
-  };
+    const mitigationOptions = seededShuffle(
+      [attack.mitigations[0], ...distractors].slice(0, 3),
+      hashString(`${attack.id}:mitigation`),
+    );
+
+    return [
+      {
+        prompt: `A defender observes: “${actionStep.detection}” Which step of this attack does that signal belong to?`,
+        options: detectionOptions,
+        correctIndex: detectionOptions.indexOf(actionStep.title),
+        explanation: `That signal is listed for the “${actionStep.title}” step.`,
+      },
+      {
+        prompt: `Which control is documented for ${attack.name}?`,
+        options: mitigationOptions,
+        correctIndex: mitigationOptions.indexOf(attack.mitigations[0]),
+        explanation: `The documented primary control is: ${attack.mitigations[0]}.`,
+      },
+    ];
+  }, [attack, distractors]);
+
+  const best = attackScores[attack.id];
+  const score = submitted
+    ? questions.reduce((total, question, index) => (selected[index] === question.correctIndex ? total + 1 : total), 0)
+    : null;
 
   const handleSubmit = () => {
-    const finalScore = calculateScore();
+    const finalScore = questions.reduce(
+      (total, question, index) => (selected[index] === question.correctIndex ? total + 1 : total),
+      0,
+    );
     setSubmitted(true);
-    setStoredScore(finalScore);
-    try {
-      localStorage.setItem(`defender-score-${attack.id}`, finalScore.toString());
-    } catch {
-      // ignore
-    }
-    onComplete?.(finalScore);
+    saveAttackScore(attack.id, finalScore, questions.length);
   };
 
-  const handleReset = () => {
-    setSelectedAnswers([null, null]);
+  const reset = () => {
+    setSelected([null, null]);
     setSubmitted(false);
   };
 
-  const allAnswered = selectedAnswers.every((ans) => ans !== null);
-  const currentScore = submitted ? calculateScore() : storedScore;
+  const allAnswered = selected.every((answer) => answer !== null);
 
   return (
-    <div className="rounded-2xl border border-indigo-500/30 bg-indigo-950/20 p-5 space-y-5">
+    <div className="rounded-2xl border border-indigo-500/30 bg-indigo-950/20 p-5 space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-indigo-500/20 pb-3">
         <div className="flex items-center gap-2.5">
           <span className="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-300">
             <Trophy className="w-4 h-4" aria-hidden="true" />
           </span>
           <div>
-            <h4 className="text-sm font-bold text-white">Defender Challenge</h4>
+            <h4 className="text-sm font-bold text-white">Defender challenge</h4>
             <p className="text-[11px] text-slate-400">
-              Verify your comprehension of the detection signals and mitigations.
+              Two questions on the detection signal and the documented control.
             </p>
           </div>
         </div>
 
-        {currentScore !== null && (
-          <div className="flex items-center gap-2">
-            <span
-              className={`px-3 py-1 rounded-full font-mono text-xs font-bold border ${
-                currentScore === 2
-                  ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
-                  : currentScore === 1
-                  ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
-                  : 'bg-rose-500/20 border-rose-500/40 text-rose-300'
-              }`}
-            >
-              Score: {currentScore} / {questions.length}
-            </span>
-            {submitted && (
-              <button
-                type="button"
-                onClick={handleReset}
-                className="p-1 rounded-md text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-                title="Retry challenge"
-                aria-label="Retry challenge"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-        )}
+        <span
+          className={`px-3 py-1 rounded-full font-mono text-xs font-bold border ${
+            best && best.score === best.total
+              ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
+              : best
+                ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
+                : 'bg-slate-800 border-slate-700 text-slate-400'
+          }`}
+        >
+          {best ? `Best ${best.score}/${best.total}` : 'Not attempted'}
+        </span>
       </div>
 
       <div className="space-y-4">
-        {questions.map((q, qIndex) => {
-          const selected = selectedAnswers[qIndex];
-          return (
-            <div key={qIndex} className="space-y-2">
-              <span className="block text-xs font-bold text-slate-200">
-                {qIndex + 1}. {q.prompt}
-              </span>
+        {questions.map((question, questionIndex) => (
+          <div key={question.prompt} className="space-y-2">
+            <span className="block text-xs font-bold text-slate-200">
+              {questionIndex + 1}. {question.prompt}
+            </span>
 
-              <div className="space-y-1.5" role="radiogroup">
-                {q.options.map((option, optIndex) => {
-                  const isSelected = selected === optIndex;
-                  const isCorrect = q.correctIndex === optIndex;
+            <div className="space-y-1.5" role="radiogroup" aria-label={`Question ${questionIndex + 1}`}>
+              {question.options.map((option, optionIndex) => {
+                const isSelected = selected[questionIndex] === optionIndex;
+                const isCorrect = question.correctIndex === optionIndex;
 
-                  let buttonStyle =
-                    'border-slate-800 bg-slate-900/80 text-slate-300 hover:border-slate-700 hover:bg-slate-850';
+                let style = 'border-slate-800 bg-slate-900/80 text-slate-300 hover:border-slate-700';
+                if (submitted) {
+                  if (isCorrect) style = 'border-emerald-500/50 bg-emerald-500/10 text-emerald-200';
+                  else if (isSelected) style = 'border-rose-500/50 bg-rose-500/10 text-rose-200';
+                  else style = 'border-slate-850 bg-slate-950/40 text-slate-500';
+                } else if (isSelected) {
+                  style = 'border-indigo-500/60 bg-indigo-500/20 text-white';
+                }
 
-                  if (submitted) {
-                    if (isCorrect) {
-                      buttonStyle = 'border-emerald-500/50 bg-emerald-500/10 text-emerald-200';
-                    } else if (isSelected && !isCorrect) {
-                      buttonStyle = 'border-rose-500/50 bg-rose-500/10 text-rose-200';
-                    } else {
-                      buttonStyle = 'border-slate-850 bg-slate-950/40 text-slate-500';
+                return (
+                  <button
+                    key={option}
+                    type="button"
+                    role="radio"
+                    aria-checked={isSelected}
+                    disabled={submitted}
+                    onClick={() =>
+                      setSelected((previous) => {
+                        const next = [...previous];
+                        next[questionIndex] = optionIndex;
+                        return next;
+                      })
                     }
-                  } else if (isSelected) {
-                    buttonStyle =
-                      'border-indigo-500/60 bg-indigo-500/20 text-white shadow-sm shadow-indigo-500/20';
-                  }
-
-                  return (
-                    <button
-                      key={optIndex}
-                      type="button"
-                      role="radio"
-                      aria-checked={isSelected}
-                      disabled={submitted}
-                      onClick={() => handleSelect(qIndex, optIndex)}
-                      className={`w-full text-left px-3.5 py-2.5 rounded-xl border text-xs transition-all flex items-start gap-2.5 ${buttonStyle}`}
-                    >
-                      <span className="mt-0.5 shrink-0">
-                        {submitted ? (
-                          isCorrect ? (
-                            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                          ) : isSelected ? (
-                            <XCircle className="w-4 h-4 text-rose-400" />
-                          ) : (
-                            <span className="w-4 h-4 rounded-full border border-slate-700 inline-block" />
-                          )
+                    className={`w-full text-left px-3.5 py-2.5 rounded-xl border text-xs transition-all flex items-start gap-2.5 ${style}`}
+                  >
+                    <span className="mt-0.5 shrink-0">
+                      {submitted ? (
+                        isCorrect ? (
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400" aria-hidden="true" />
+                        ) : isSelected ? (
+                          <XCircle className="w-4 h-4 text-rose-400" aria-hidden="true" />
                         ) : (
-                          <span
-                            className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                              isSelected
-                                ? 'border-indigo-400 bg-indigo-500'
-                                : 'border-slate-700 bg-slate-950'
-                            }`}
-                          >
-                            {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
-                          </span>
-                        )}
-                      </span>
-                      <span className="leading-relaxed">{option}</span>
-                    </button>
-                  );
-                })}
-              </div>
+                          <span className="w-4 h-4 rounded-full border border-slate-700 inline-block" />
+                        )
+                      ) : (
+                        <span
+                          className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                            isSelected ? 'border-indigo-400 bg-indigo-500' : 'border-slate-700 bg-slate-950'
+                          }`}
+                        >
+                          {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                        </span>
+                      )}
+                    </span>
+                    <span className="leading-relaxed">{option}</span>
+                  </button>
+                );
+              })}
             </div>
-          );
-        })}
+
+            {submitted && (
+              <p className="text-[11px] text-slate-400 leading-relaxed">{question.explanation}</p>
+            )}
+          </div>
+        ))}
       </div>
 
       {!submitted ? (
@@ -216,25 +200,30 @@ export default function DefenderChallenge({ attack, onComplete }: DefenderChalle
           type="button"
           onClick={handleSubmit}
           disabled={!allAnswered}
-          className="w-full py-2.5 rounded-xl text-xs font-bold font-mono transition-all uppercase tracking-wider bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:hover:bg-indigo-600 text-white shadow-md shadow-indigo-900/40"
+          className="w-full py-2.5 rounded-xl text-xs font-bold font-mono uppercase tracking-wider bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white transition-colors"
         >
-          Submit Defender Evaluation
+          Submit defender evaluation
         </button>
       ) : (
-        <div className="rounded-xl border border-indigo-500/30 bg-slate-950/80 p-3.5 flex items-center justify-between gap-3">
+        <div
+          className="rounded-xl border border-indigo-500/30 bg-slate-950/80 p-3.5 flex flex-wrap items-center justify-between gap-3"
+          aria-live="polite"
+        >
           <div className="flex items-center gap-2">
-            <ShieldCheck className="w-5 h-5 text-indigo-400 shrink-0" />
+            <ShieldCheck className="w-5 h-5 text-indigo-400 shrink-0" aria-hidden="true" />
             <span className="text-xs text-slate-300">
-              {calculateScore() === 2
-                ? 'Excellent! You have mastered both the telemetry detection and core mitigation.'
-                : 'Review the threat model above to reinforce detection indicators.'}
+              Score {score}/{questions.length}.{' '}
+              {score === questions.length
+                ? 'Both the detection signal and the primary control are correct.'
+                : 'Review the telemetry and the documented controls above.'}
             </span>
           </div>
           <button
             type="button"
-            onClick={handleReset}
-            className="text-xs font-mono font-bold text-indigo-300 hover:text-indigo-200 shrink-0"
+            onClick={reset}
+            className="inline-flex items-center gap-1 text-xs font-mono font-bold text-indigo-300 hover:text-indigo-200 shrink-0"
           >
+            <RotateCcw className="w-3 h-3" aria-hidden="true" />
             Retake
           </button>
         </div>

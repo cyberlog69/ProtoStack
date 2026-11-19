@@ -61,6 +61,7 @@ interface ProtocolDetailProps {
   lastReviewed: string | null;
   prerequisites: { slug: string; name: string }[];
   attacks: AttackScenario[];
+  attackDistractors: string[];
 }
 
 export default function ProtocolDetail({
@@ -72,6 +73,7 @@ export default function ProtocolDetail({
   lastReviewed,
   prerequisites,
   attacks,
+  attackDistractors,
 }: ProtocolDetailProps) {
   const { toggleLearned, toggleBookmark, isLearned, isBookmarked } = useProgress();
 
@@ -259,7 +261,7 @@ export default function ProtocolDetail({
             title="Threat Model & Attack Simulation"
             subtitle="How this protocol is attacked in practice, what defenders can see, and which control stops it."
           />
-          <AttackLab protocolName={protocol.name} attacks={attacks} />
+          <AttackLab protocolName={protocol.name} protocolSlug={protocol.slug} attacks={attacks} distractors={attackDistractors} />
         </section>
       )}
 
