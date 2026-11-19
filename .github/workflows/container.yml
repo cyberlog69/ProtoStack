@@ -79,16 +79,45 @@ jobs:
           username: ${{ secrets.ORACLE_VM_USER || 'ubuntu' }}
           key: ${{ secrets.ORACLE_VM_KEY }}
           script: |
+            set -eu
+
             podman pull ghcr.io/cyberlog69/protostack:latest
+
             if systemctl --user is-active protostack >/dev/null 2>&1; then
               systemctl --user restart protostack
-            elif podman ps -q --filter "name=protostack" | grep -q .; then
-              podman stop protostack
-              podman rm protostack
+            elif podman ps -a -q --filter "name=protostack" | grep -q .; then
+              podman stop protostack || true
+              podman rm protostack || true
               podman run -d --name protostack --restart always -p 8080:3000 \
                 -e HTTP_TEST_ALLOWED_HOSTS=example.com,www.example.com,httpbin.org,jsonplaceholder.typicode.com \
                 ghcr.io/cyberlog69/protostack:latest
             else
-              systemctl --user restart protostack || true
+              echo "No protostack service or container found on the VM." >&2
+              exit 1
             fi
-            echo "ProtoStack updated successfully on Oracle VM."
+
+            healthy=0
+            attempt=1
+            while [ "$attempt" -le 30 ]; do
+              if command -v curl >/dev/null 2>&1; then
+                if curl -fsS --max-time 3 http://127.0.0.1:8080/api/health >/dev/null 2>&1; then
+                  healthy=1
+                  break
+                fi
+              elif podman exec protostack node -e "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))" >/dev/null 2>&1; then
+                healthy=1
+                break
+              fi
+              attempt=$((attempt + 1))
+              sleep 2
+            done
+
+            if [ "$healthy" -ne 1 ]; then
+              echo "Deployment health check failed; recent container logs:" >&2
+              podman logs --tail 60 protostack >&2 || true
+              exit 1
+            fi
+
+            echo "ProtoStack is healthy on Oracle VM."
+            podman image inspect ghcr.io/cyberlog69/protostack:latest \
+              --format 'Running image digest: {{.Digest}}' 2>/dev/null || true
