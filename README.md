@@ -61,7 +61,7 @@ Category counts are derived from the data at build time, so they cannot drift fr
 - Every one of the 80 protocols has a threat model: three attacker steps (precondition, action, impact), per-step detection guidance, the impact and at least two defences.
 - The library covers eight categories: spoofing, interception, injection, denial of service, credential attacks, downgrade, feature abuse and reconnaissance.
 - Each scenario carries a teaching difficulty (1–3 stars) and a three-phase timeline; the library can filter and sort by difficulty.
-- Each protocol page includes an **attack simulation** panel: an animated attacker → target flow, a phase timeline, scoped keyboard shortcuts (`←` `→` `M` `R`), auto-play, and a mitigation toggle that shows the blocked state.
+- Each protocol page includes an **attack simulation** panel with a manual **Simulate attack** control (pause, resume, replay), an animated attacker → target flow, a phase timeline, scoped keyboard shortcuts (`S` `←` `→` `M` `R`), and a mitigation toggle that shows the blocked state. Nothing animates or advances until you start it.
 - On the final step, a two-question **defender challenge** checks the detection signal and the documented control. Best scores are stored locally through the shared progress store, and completed scenarios are marked in the library.
 - MITRE ATT&CK® badges are shown only for reviewed mappings from a small, tested allowlist; there are no invented CVSS scores or CVE IDs.
 - A **frame anatomy** panel shows the protocol's real header fields, bit widths and offsets. Attack packets themselves are not reproduced.

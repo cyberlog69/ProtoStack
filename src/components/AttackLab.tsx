@@ -7,7 +7,7 @@ import { attackPhase } from '@/data/attackPhases';
 import { mitreTechnique } from '@/data/mitre';
 import type { AttackScenario } from '@/data/attacks';
 import KillChainBar from './KillChainBar';
-import PacketFlowAnimation from './PacketFlowAnimation';
+import PacketFlowAnimation, { type SimulationState } from './PacketFlowAnimation';
 import AttackFrameAnatomy from './AttackFrameAnatomy';
 import DefenderChallenge from './DefenderChallenge';
 import {
@@ -34,7 +34,7 @@ export default function AttackLab({ protocolName, protocolSlug, attacks, distrac
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [stepIndex, setStepIndex] = useState(0);
   const [mitigated, setMitigated] = useState(false);
-  const [autoPlay, setAutoPlay] = useState(false);
+  const [simulationState, setSimulationState] = useState<SimulationState>('idle');
 
   const attack = attacks[selectedIndex] ?? attacks[0];
   const totalSteps = attack?.steps.length ?? 0;
@@ -43,30 +43,50 @@ export default function AttackLab({ protocolName, protocolSlug, attacks, distrac
     setSelectedIndex(index);
     setStepIndex(0);
     setMitigated(false);
-    setAutoPlay(false);
+    setSimulationState('idle');
   };
 
   const goToStep = (index: number) => {
     setStepIndex(Math.max(0, Math.min(totalSteps - 1, index)));
-    setAutoPlay(false);
+    setSimulationState('paused');
   };
 
-  // Auto-advance only while the panel is mounted and the user has not taken over.
+  const startSimulation = () => {
+    setMitigated(false);
+    setStepIndex(0);
+    setSimulationState('running');
+  };
+
+  const toggleSimulation = () => {
+    if (simulationState === 'running') {
+      setSimulationState('paused');
+      return;
+    }
+    if (simulationState === 'complete') {
+      startSimulation();
+      return;
+    }
+    if (simulationState === 'idle') {
+      startSimulation();
+      return;
+    }
+    setSimulationState('running');
+  };
+
+  // Advance one step at a time only after the user starts the simulation.
   useEffect(() => {
-    if (!autoPlay || totalSteps === 0) return;
+    if (simulationState !== 'running' || totalSteps === 0) return;
 
-    const timer = window.setInterval(() => {
-      setStepIndex((current) => {
-        if (current >= totalSteps - 1) {
-          setAutoPlay(false);
-          return current;
-        }
-        return current + 1;
-      });
-    }, 2800);
+    const timer = window.setTimeout(() => {
+      if (stepIndex < totalSteps - 1) {
+        setStepIndex((current) => current + 1);
+      } else {
+        setSimulationState('complete');
+      }
+    }, 2600);
 
-    return () => window.clearInterval(timer);
-  }, [autoPlay, totalSteps]);
+    return () => window.clearTimeout(timer);
+  }, [simulationState, stepIndex, totalSteps]);
 
   if (!attack) return null;
 
@@ -76,7 +96,7 @@ export default function AttackLab({ protocolName, protocolSlug, attacks, distrac
 
   const phase = attackPhase(step.phase);
   const isLast = stepIndex >= attack.steps.length - 1;
-  const showChallenge = isLast && !mitigated;
+  const showChallenge = isLast && !mitigated && simulationState !== 'running';
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     const target = event.target as HTMLElement;
@@ -91,10 +111,15 @@ export default function AttackLab({ protocolName, protocolSlug, attacks, distrac
     } else if (event.key.toLowerCase() === 'm') {
       event.preventDefault();
       setMitigated((current) => !current);
+      setSimulationState('paused');
     } else if (event.key.toLowerCase() === 'r') {
       event.preventDefault();
       setStepIndex(0);
-      setAutoPlay(false);
+      setMitigated(false);
+      setSimulationState('idle');
+    } else if (event.key.toLowerCase() === 's') {
+      event.preventDefault();
+      toggleSimulation();
     }
   };
 
@@ -122,7 +147,7 @@ export default function AttackLab({ protocolName, protocolSlug, attacks, distrac
         <div className="flex items-center gap-3">
           <div className="hidden sm:flex items-center gap-1.5 text-[10px] font-mono text-slate-500 border border-slate-800 rounded-lg px-2.5 py-1 bg-slate-950">
             <Keyboard className="w-3 h-3 text-slate-400" aria-hidden="true" />
-            <span>Focus panel: ← → M R</span>
+            <span>Focus panel: S ← → M R</span>
           </div>
           <Link
             href="/attacks"
@@ -197,7 +222,84 @@ export default function AttackLab({ protocolName, protocolSlug, attacks, distrac
           )}
         </div>
 
-        <PacketFlowAnimation step={step} mitigated={mitigated} protocolName={protocolName} />
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-3">
+          <button
+            type="button"
+            onClick={toggleSimulation}
+            className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-xs font-bold text-white transition-colors ${
+              simulationState === 'running'
+                ? 'bg-amber-600 hover:bg-amber-500'
+                : simulationState === 'complete'
+                  ? 'bg-slate-700 hover:bg-slate-600'
+                  : 'bg-rose-600 hover:bg-rose-500'
+            }`}
+          >
+            {simulationState === 'running' ? (
+              <Pause className="w-4 h-4" aria-hidden="true" />
+            ) : simulationState === 'complete' ? (
+              <RotateCcw className="w-4 h-4" aria-hidden="true" />
+            ) : (
+              <Play className="w-4 h-4" aria-hidden="true" />
+            )}
+            <span>
+              {simulationState === 'running'
+                ? 'Pause simulation'
+                : simulationState === 'paused'
+                  ? 'Resume simulation'
+                  : simulationState === 'complete'
+                    ? 'Replay simulation'
+                    : 'Simulate attack'}
+            </span>
+          </button>
+
+          <span className="inline-flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-slate-400">
+            <span
+              className={`w-2 h-2 rounded-full ${
+                simulationState === 'running'
+                  ? 'bg-rose-500'
+                  : simulationState === 'complete'
+                    ? 'bg-emerald-500'
+                    : simulationState === 'paused'
+                      ? 'bg-amber-500'
+                      : 'bg-slate-600'
+              }`}
+              aria-hidden="true"
+            />
+            {simulationState === 'running'
+              ? 'running'
+              : simulationState === 'paused'
+                ? 'paused'
+                : simulationState === 'complete'
+                  ? 'complete'
+                  : 'idle'}
+          </span>
+
+          {simulationState !== 'idle' && (
+            <button
+              type="button"
+              onClick={() => {
+                setSimulationState('idle');
+                setStepIndex(0);
+                setMitigated(false);
+              }}
+              className="inline-flex items-center gap-1 text-[11px] font-mono text-slate-400 hover:text-white"
+            >
+              <RotateCcw className="w-3 h-3" aria-hidden="true" />
+              Reset
+            </button>
+          )}
+
+          <span className="text-[11px] text-slate-500 sm:ml-auto">
+            Manual control — nothing runs until you start it.
+          </span>
+        </div>
+
+        <PacketFlowAnimation
+          step={step}
+          mitigated={mitigated}
+          protocolName={protocolName}
+          state={simulationState}
+        />
 
         <div className="rounded-xl border border-slate-800 bg-slate-950 p-4 space-y-4" aria-live="polite">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
@@ -207,19 +309,6 @@ export default function AttackLab({ protocolName, protocolSlug, attacks, distrac
             </span>
 
             <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => setAutoPlay((current) => !current)}
-                aria-pressed={autoPlay}
-                className={`px-2.5 py-1 rounded-md text-[10px] font-mono font-bold flex items-center gap-1 transition-colors ${
-                  autoPlay ? 'bg-rose-500 text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
-                }`}
-                title={autoPlay ? 'Pause auto-advance' : 'Auto-play attack steps'}
-              >
-                {autoPlay ? <Pause className="w-3 h-3" aria-hidden="true" /> : <Play className="w-3 h-3" aria-hidden="true" />}
-                <span>{autoPlay ? 'Pause' : 'Auto-play'}</span>
-              </button>
-
               <button
                 type="button"
                 onClick={() => goToStep(stepIndex - 1)}
@@ -244,11 +333,12 @@ export default function AttackLab({ protocolName, protocolSlug, attacks, distrac
                 type="button"
                 onClick={() => {
                   setStepIndex(0);
-                  setAutoPlay(false);
+                  setMitigated(false);
+                  setSimulationState('idle');
                 }}
                 aria-label="Restart attack steps"
                 className="p-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
-                title="Reset to step 1"
+                title="Reset simulation"
               >
                 <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
               </button>
@@ -299,7 +389,10 @@ export default function AttackLab({ protocolName, protocolSlug, attacks, distrac
 
           <button
             type="button"
-            onClick={() => setMitigated((current) => !current)}
+            onClick={() => {
+              setMitigated((current) => !current);
+              setSimulationState('paused');
+            }}
             aria-pressed={mitigated}
             className={`rounded-xl border px-4 py-3 text-xs font-bold font-mono transition-all shrink-0 flex items-center justify-center gap-2 ${
               mitigated
