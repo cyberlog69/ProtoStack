@@ -1,16 +1,22 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { PROTOCOLS, CATEGORIES_META } from '@/data/protocols';
 import { Protocol } from '@/types/protocol';
+import { ATTACKS } from '@/data/attacks';
 import ProtocolCard from '@/components/ProtocolCard';
-import { Search, Layers, Cpu, Terminal, Sparkles, Activity, X } from 'lucide-react';
+import { Search, Layers, Cpu, Terminal, Sparkles, Activity, X, ShieldAlert, ArrowRight } from 'lucide-react';
 
 export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedLayer, setSelectedLayer] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [featuredIndex, setFeaturedIndex] = useState(0);
+
+  useEffect(() => {
+    setFeaturedIndex(Math.floor(Date.now() / 86400000) % ATTACKS.length);
+  }, []);
 
   const OSI_LAYERS = [
     'all',
@@ -300,6 +306,63 @@ export default function HomePage() {
           </div>
         )}
       </section>
+
+      {/* Daily Threat Radar / Threat of the Week */}
+      {(() => {
+        const featured = ATTACKS[featuredIndex] ?? ATTACKS[0];
+        if (!featured) return null;
+
+        return (
+          <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="rounded-2xl border border-rose-500/30 bg-gradient-to-r from-rose-950/30 via-slate-900/80 to-slate-950 p-6 sm:p-8 space-y-4 shadow-xl shadow-rose-950/10">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-mono">
+                  <ShieldAlert className="w-3.5 h-3.5 animate-pulse" aria-hidden="true" />
+                  <span>Threat Radar — Threat of the Day</span>
+                </div>
+                <Link
+                  href="/attacks"
+                  className="text-xs font-mono font-bold text-rose-300 hover:text-rose-200 inline-flex items-center gap-1.5"
+                >
+                  Explore All {ATTACKS.length} Scenarios
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight">{featured.name}</h3>
+                  <span className="text-xs font-mono text-amber-400">
+                    {'★'.repeat(featured.difficulty)}{'☆'.repeat(3 - featured.difficulty)}
+                  </span>
+                  {featured.cvssScore !== undefined && (
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded border border-orange-500/40 text-orange-300 bg-orange-500/10 font-bold">
+                      CVSS {featured.cvssScore.toFixed(1)}
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-slate-300 leading-relaxed max-w-3xl">{featured.summary}</p>
+              </div>
+
+              <div className="pt-2 flex flex-wrap items-center gap-3">
+                <Link
+                  href={`/protocols/${featured.protocolSlug}#attacks`}
+                  className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-mono text-xs font-bold transition-all shadow-md shadow-rose-900/30 inline-flex items-center gap-2"
+                >
+                  <span>Launch Threat Simulation</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+                <Link
+                  href="/attacks"
+                  className="px-4 py-2 rounded-xl border border-slate-700 hover:border-slate-600 text-slate-300 hover:text-white font-mono text-xs transition-colors"
+                >
+                  Browse Attack Taxonomy
+                </Link>
+              </div>
+            </div>
+          </section>
+        );
+      })()}
     </div>
   );
 }

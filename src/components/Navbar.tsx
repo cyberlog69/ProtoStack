@@ -111,7 +111,15 @@ export default function Navbar() {
                   }`}
                 >
                   <Icon className={`w-4 h-4 ${item.color}`} aria-hidden="true" />
-                  {item.label}
+                  <span className="relative">
+                    {item.label}
+                    {item.href === '/attacks' && (
+                      <span
+                        className="absolute -top-1 -right-2 w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse shadow-[0_0_6px_rgba(244,63,94,0.8)]"
+                        aria-hidden="true"
+                      />
+                    )}
+                  </span>
                 </Link>
               );
             })}
@@ -162,7 +170,15 @@ export default function Navbar() {
                       }`}
                     >
                       <Icon className={`w-4 h-4 ${item.color}`} aria-hidden="true" />
-                      {item.label}
+                      <span className="relative">
+                        {item.label}
+                        {item.href === '/attacks' && (
+                          <span
+                            className="absolute -top-1 -right-2 w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"
+                            aria-hidden="true"
+                          />
+                        )}
+                      </span>
                     </Link>
                   </li>
                 );
