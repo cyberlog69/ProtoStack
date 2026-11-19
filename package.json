@@ -4,7 +4,7 @@
   "description": "Interactive networking, internet, and IoT protocol learning platform with animated packet-flow models, honestly labelled sandboxes, OSI/TCP-IP layer views, comparisons, and quizzes.",
   "private": true,
   "engines": {
-    "node": ">=20.9.0"
+    "node": "^20.19.0 || ^22.13.0 || >=24"
   },
   "scripts": {
     "dev": "next dev",

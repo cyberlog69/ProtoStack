@@ -25,7 +25,7 @@ Free tiers change regularly; treat the table as a starting point, not a contract
 
 | Requirement | Value |
 | :--- | :--- |
-| Node.js | 20.9 or newer (22 LTS recommended) |
+| Node.js | 20.19 or newer (22 LTS recommended) |
 | Memory | 512 MB to run, 1–2 GB to build |
 | Disk | ~500 MB for dependencies and build output |
 | Outbound network | DNS (53) and HTTPS (443) for the live sandboxes |

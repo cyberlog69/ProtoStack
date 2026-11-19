@@ -35,8 +35,6 @@ export default function AttackBrowser() {
     return ids;
   }, [attackScores]);
 
-  const isComplete = (id: string) => completedIds.has(id);
-
   const filtered = useMemo(() => {
     const normalized = query.trim().toLowerCase();
 

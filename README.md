@@ -112,7 +112,7 @@ Category counts are derived from the data at build time, so they cannot drift fr
 
 ### Prerequisites
 
-- Node.js **20.9 or newer** (Next.js 16 requirement)
+- Node.js **20.19 or newer** (Next.js 16 needs 20.9+; ESLint 10 needs 20.19+). Node 22 LTS is recommended.
 - npm
 
 ### Install and run
@@ -170,7 +170,7 @@ npm run check       # typecheck + lint + test
 npm run ingest      # audit real protocol counts and data structure
 ```
 
-CI runs typecheck, lint, tests, and a production build on Node 20.9 and Node 22.
+CI runs typecheck, lint, tests, and a production build on Node 20.x and Node 22.x.
 
 ---
 
