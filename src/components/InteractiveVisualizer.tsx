@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useReducedMotion } from 'framer-motion';
 import { Protocol } from '@/types/protocol';
 import { crc32Hex, hexDump, toBitString } from '@/lib/hex';
@@ -117,6 +117,7 @@ export default function InteractiveVisualizer({ protocol }: { protocol: Protocol
   const [activeTab, setActiveTab] = useState<TabId>('process');
   const [packetProgress, setPacketProgress] = useState(0);
   const shouldReduceMotion = useReducedMotion();
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const steps = protocol.interactiveSteps;
   const currentStep = steps[currentStepIndex] ?? steps[0];
@@ -198,8 +199,10 @@ export default function InteractiveVisualizer({ protocol }: { protocol: Protocol
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    const panel = panelRef.current;
+    if (!panel) return;
+    panel.addEventListener('keydown', handleKeyDown);
+    return () => panel.removeEventListener('keydown', handleKeyDown);
   }, [handleNext, handlePrev, handlePlayToggle]);
 
   if (!currentStep) {
@@ -319,10 +322,15 @@ export default function InteractiveVisualizer({ protocol }: { protocol: Protocol
   ];
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900/90 backdrop-blur-md overflow-hidden shadow-2xl">
+    <div
+      ref={panelRef}
+      tabIndex={0}
+      aria-label={`${protocol.name} interactive packet flow`}
+      className="rounded-2xl border border-slate-800 bg-slate-900/90 backdrop-blur-md overflow-hidden shadow-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60"
+    >
       {/* Controls */}
-      <div className="px-5 sm:px-6 py-4 border-b border-slate-800 flex flex-wrap items-center justify-between gap-4 bg-slate-950/80">
-        <div className="min-w-0">
+      <div className="px-4 sm:px-6 py-4 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 sm:gap-4 bg-slate-950/80">
+        <div className="min-w-0 flex-1 basis-56">
           <div className="flex flex-wrap items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" aria-hidden="true" />
             <h3 className="text-base font-bold text-white">Interactive Packet Flow</h3>
@@ -336,10 +344,11 @@ export default function InteractiveVisualizer({ protocol }: { protocol: Protocol
           </p>
           <p className="text-[11px] text-slate-500 mt-0.5">
             Field values come from the protocol model, not from a live capture.
+            <span className="hidden sm:inline"> Focus panel: ← → Space.</span>
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-between sm:justify-end gap-1.5 sm:gap-2 w-full sm:w-auto">
           <div className="flex rounded-lg bg-slate-900 border border-slate-800 p-0.5 mr-1 text-xs font-mono">
             {([0.5, 1, 2] as const).map((value) => (
               <button
@@ -348,7 +357,7 @@ export default function InteractiveVisualizer({ protocol }: { protocol: Protocol
                 onClick={() => setSpeed(value)}
                 aria-pressed={speed === value}
                 aria-label={`Playback speed ${value}x`}
-                className={`px-2 py-1 rounded text-[10px] font-bold transition-colors ${
+                className={`px-2 py-1.5 rounded text-[10px] font-bold transition-colors ${
                   speed === value ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
                 }`}
                 title={`Speed ${value}x`}
@@ -363,7 +372,7 @@ export default function InteractiveVisualizer({ protocol }: { protocol: Protocol
             onClick={handlePrev}
             disabled={currentStepIndex === 0}
             aria-label="Previous step"
-            className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs transition-colors"
+            className="p-2.5 sm:p-2 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
             title="Previous step (Left Arrow)"
           >
             <ChevronLeft className="w-4 h-4" aria-hidden="true" />
@@ -373,7 +382,7 @@ export default function InteractiveVisualizer({ protocol }: { protocol: Protocol
             type="button"
             onClick={handlePlayToggle}
             aria-label={isPlaying ? 'Pause animation' : 'Play animation'}
-            className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-md shadow-indigo-600/30"
+            className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-md shadow-indigo-600/30 min-h-[40px]"
           >
             {isPlaying ? (
               <>
@@ -393,7 +402,7 @@ export default function InteractiveVisualizer({ protocol }: { protocol: Protocol
             onClick={handleNext}
             disabled={currentStepIndex === steps.length - 1}
             aria-label="Next step"
-            className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs transition-colors"
+            className="p-2.5 sm:p-2 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
             title="Next step (Right Arrow)"
           >
             <ChevronRight className="w-4 h-4" aria-hidden="true" />
@@ -403,7 +412,7 @@ export default function InteractiveVisualizer({ protocol }: { protocol: Protocol
             type="button"
             onClick={handleReset}
             aria-label="Reset to first step"
-            className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition-colors ml-1"
+            className="p-2.5 sm:p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
             title="Reset to step 1"
           >
             <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
@@ -481,7 +490,7 @@ export default function InteractiveVisualizer({ protocol }: { protocol: Protocol
                   {!active && <span className="mb-1 h-[18px]" aria-hidden="true" />}
 
                   <div
-                    className={`relative z-10 w-14 h-14 rounded-2xl flex items-center justify-center border-2 bg-slate-950 transition-all ${
+                    className={`relative z-10 w-11 h-11 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center border-2 bg-slate-950 transition-all ${
                       isSource
                         ? 'border-indigo-400 shadow-lg shadow-indigo-500/30 ring-2 ring-indigo-500/30'
                         : isTarget
@@ -492,9 +501,9 @@ export default function InteractiveVisualizer({ protocol }: { protocol: Protocol
                     {actorIcon(actor.icon)}
                   </div>
 
-                  <span className="mt-2 text-[11px] sm:text-xs font-bold text-white leading-tight">{actor.label}</span>
-                  <span className="text-[9px] text-slate-500 font-mono truncate max-w-full">{actor.id}</span>
-                  <span className="text-[9px] text-slate-400 font-mono truncate max-w-full min-h-[12px]">
+                  <span className="mt-2 text-[10px] sm:text-xs font-bold text-white leading-tight max-w-full truncate">{actor.label}</span>
+                  <span className="text-[9px] text-slate-500 font-mono max-w-full truncate">{actor.id}</span>
+                  <span className="text-[9px] text-slate-400 font-mono max-w-full truncate min-h-[12px]">
                     {address ?? ''}
                   </span>
                 </div>
@@ -507,10 +516,16 @@ export default function InteractiveVisualizer({ protocol }: { protocol: Protocol
         <div className="relative z-10 mt-5 rounded-xl border border-slate-800 bg-slate-900/80 p-3 space-y-2">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] font-mono">
             <span className="text-slate-500">Direction</span>
-            <span className="text-cyan-300 inline-flex items-center gap-1">
+            <span className="text-cyan-300 inline-flex flex-wrap items-center gap-1">
               {sourceActor?.label ?? currentStep.actorSource}
+              {currentStep.packetInfo?.source && (
+                <span className="text-slate-500">({currentStep.packetInfo.source})</span>
+              )}
               <ArrowRight className="w-3 h-3" aria-hidden="true" />
               {targetActor?.label ?? currentStep.actorTarget}
+              {currentStep.packetInfo?.destination && (
+                <span className="text-slate-500">({currentStep.packetInfo.destination})</span>
+              )}
             </span>
             <span className="text-slate-500">Frame</span>
             <span className="text-indigo-300">{packetType}</span>
@@ -547,7 +562,7 @@ export default function InteractiveVisualizer({ protocol }: { protocol: Protocol
       </div>
 
       {/* Timeline */}
-      <div className="px-4 sm:px-6 py-3 bg-slate-950 border-t border-b border-slate-800 flex items-center gap-1.5 overflow-x-auto">
+      <div className="px-4 sm:px-6 py-3 bg-slate-950 border-t border-b border-slate-800 flex flex-wrap items-center gap-1.5">
         {steps.map((step, index) => {
           const active = index === currentStepIndex;
           const complete = index < currentStepIndex;
@@ -572,7 +587,7 @@ export default function InteractiveVisualizer({ protocol }: { protocol: Protocol
               ) : (
                 <span className="text-[10px] opacity-70">{step.step}</span>
               )}
-              <span className="max-w-[150px] truncate">{stepLabel(step.title)}</span>
+              <span className="max-w-[220px] sm:max-w-[150px] truncate">{stepLabel(step.title)}</span>
             </button>
           );
         })}
@@ -580,7 +595,7 @@ export default function InteractiveVisualizer({ protocol }: { protocol: Protocol
 
       {/* Inspector */}
       <div className="p-4 sm:p-6 bg-slate-900/70">
-        <div className="flex items-center gap-1 border-b border-slate-800 pb-3 mb-4 overflow-x-auto">
+        <div className="flex flex-wrap items-center gap-1 border-b border-slate-800 pb-3 mb-4">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -837,7 +852,7 @@ export default function InteractiveVisualizer({ protocol }: { protocol: Protocol
             </div>
 
             {hexLines.length > 0 ? (
-              <div className="text-slate-400 leading-loose select-all overflow-x-auto">
+              <div className="text-slate-400 leading-loose select-all overflow-x-auto text-[10px] sm:text-xs">
                 {hexLines.map((line) => (
                   <div key={line.offset} className="whitespace-pre">
                     <span className="text-indigo-400">{line.offset}</span>

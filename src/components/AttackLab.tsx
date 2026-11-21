@@ -314,9 +314,9 @@ export default function AttackLab({ protocolName, protocolSlug, attacks, distrac
                 onClick={() => goToStep(stepIndex - 1)}
                 disabled={stepIndex === 0}
                 aria-label="Previous attack step"
-                className="p-1.5 rounded-md bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-white transition-colors"
+                className="p-2.5 rounded-md bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-white transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
               >
-                <ChevronLeft className="w-3.5 h-3.5" aria-hidden="true" />
+                <ChevronLeft className="w-4 h-4" aria-hidden="true" />
               </button>
 
               <button
@@ -324,9 +324,9 @@ export default function AttackLab({ protocolName, protocolSlug, attacks, distrac
                 onClick={() => goToStep(stepIndex + 1)}
                 disabled={isLast}
                 aria-label="Next attack step"
-                className="p-1.5 rounded-md bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-white transition-colors"
+                className="p-2.5 rounded-md bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-white transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
               >
-                <ChevronRight className="w-3.5 h-3.5" aria-hidden="true" />
+                <ChevronRight className="w-4 h-4" aria-hidden="true" />
               </button>
 
               <button
@@ -337,10 +337,10 @@ export default function AttackLab({ protocolName, protocolSlug, attacks, distrac
                   setSimulationState('idle');
                 }}
                 aria-label="Restart attack steps"
-                className="p-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+                className="p-2.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
                 title="Reset simulation"
               >
-                <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
+                <RotateCcw className="w-4 h-4" aria-hidden="true" />
               </button>
             </div>
           </div>

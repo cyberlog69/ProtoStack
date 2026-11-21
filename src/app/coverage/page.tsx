@@ -507,43 +507,50 @@ function MatrixTable({
   rows: { key: string; label: string; cells: number[]; total: number }[];
 }) {
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900/50 overflow-x-auto">
-      <table className="w-full text-left text-xs">
-        <caption className="sr-only">{caption}</caption>
-        <thead>
-          <tr className="border-b border-slate-800 text-slate-400 font-mono">
-            <th scope="col" className="px-4 py-3 font-semibold">
-              {rowHeader}
-            </th>
-            {TIER_META.map((tier) => (
-              <th key={tier.id} scope="col" className="px-4 py-3 font-semibold text-center whitespace-nowrap">
-                {tier.shortLabel}
+    <div className="rounded-2xl border border-slate-800 bg-slate-900/50 overflow-hidden">
+      <div className="scroll-x">
+        <table className="w-full text-left text-xs">
+          <caption className="sr-only">{caption}</caption>
+          <thead>
+            <tr className="border-b border-slate-800 text-slate-400 font-mono">
+              <th scope="col" className="px-1.5 sm:px-4 py-3 font-semibold">
+                {rowHeader}
               </th>
-            ))}
-            <th scope="col" className="px-4 py-3 font-semibold text-center">
-              Total
-            </th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-800/70">
-          {rows.map((row) => (
-            <tr key={row.key} className="hover:bg-slate-900/60">
-              <th scope="row" className="px-4 py-2.5 font-medium text-slate-200 text-left">
-                {row.label}
-              </th>
-              {row.cells.map((count, index) => (
-                <td
-                  key={`${row.key}-${TIER_ORDER[index]}`}
-                  className={`px-4 py-2.5 text-center font-mono ${count === 0 ? 'text-slate-600' : 'text-slate-200'}`}
-                >
-                  {count}
-                </td>
+              {TIER_META.map((tier) => (
+                <th key={tier.id} scope="col" className="px-1.5 sm:px-4 py-3 font-semibold text-center whitespace-nowrap">
+                  <span className="sm:hidden">
+                    <abbr title={tier.shortLabel} className="no-underline">
+                      {tier.shortLabel === 'Professional' ? 'Pro' : tier.shortLabel === 'Reference' ? 'Ref' : tier.shortLabel}
+                    </abbr>
+                  </span>
+                  <span className="hidden sm:inline">{tier.shortLabel}</span>
+                </th>
               ))}
-              <td className="px-4 py-2.5 text-center font-mono font-bold text-white">{row.total}</td>
+              <th scope="col" className="px-1.5 sm:px-4 py-3 font-semibold text-center">
+                Total
+              </th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="divide-y divide-slate-800/70">
+            {rows.map((row) => (
+              <tr key={row.key} className="hover:bg-slate-900/60">
+                <th scope="row" className="px-1.5 sm:px-4 py-2.5 font-medium text-slate-200 text-left">
+                  {row.label}
+                </th>
+                {row.cells.map((count, index) => (
+                  <td
+                    key={`${row.key}-${TIER_ORDER[index]}`}
+                    className={`px-1.5 sm:px-4 py-2.5 text-center font-mono ${count === 0 ? 'text-slate-600' : 'text-slate-200'}`}
+                  >
+                    {count}
+                  </td>
+                ))}
+                <td className="px-1.5 sm:px-4 py-2.5 text-center font-mono font-bold text-white">{row.total}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

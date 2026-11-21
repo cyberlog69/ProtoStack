@@ -128,7 +128,7 @@ export default function Navbar({ attackCount }: { attackCount: number }) {
             <button
               type="button"
               onClick={openSearch}
-              className="text-xs font-mono px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 hover:border-slate-700 hover:bg-slate-800/50 flex items-center gap-2 transition-all cursor-pointer shadow-sm"
+              className="text-xs font-mono px-2.5 sm:px-3 py-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 hover:border-slate-700 hover:bg-slate-800/50 flex items-center gap-2 transition-all cursor-pointer shadow-sm min-h-[40px]"
               title="Search all protocols (Ctrl+K)"
               aria-label="Search all protocols"
             >
@@ -142,7 +142,7 @@ export default function Navbar({ attackCount }: { attackCount: number }) {
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen((previous) => !previous)}
-              className="lg:hidden p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 transition-colors"
+              className="lg:hidden p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
               aria-label={isMobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
               aria-expanded={isMobileMenuOpen}
               aria-controls="mobile-navigation"
@@ -153,8 +153,12 @@ export default function Navbar({ attackCount }: { attackCount: number }) {
         </div>
 
         {isMobileMenuOpen && (
-          <nav id="mobile-navigation" aria-label="Mobile" className="lg:hidden border-t border-slate-800 bg-slate-950/95 px-4 py-3">
-            <ul className="space-y-1">
+          <nav
+            id="mobile-navigation"
+            aria-label="Mobile"
+            className="lg:hidden border-t border-slate-800 bg-slate-950/95 px-4 py-3 max-h-[calc(100dvh-4rem)] overflow-y-auto"
+          >
+            <ul className="grid grid-cols-2 gap-1.5">
               {NAV_ITEMS.map((item) => {
                 const Icon = item.icon;
                 const active = isActive(item.href);
@@ -164,13 +168,13 @@ export default function Navbar({ attackCount }: { attackCount: number }) {
                       href={item.href}
                       onClick={() => setIsMobileMenuOpen(false)}
                       aria-current={active ? 'page' : undefined}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                      className={`flex items-center gap-2.5 px-3 py-3 rounded-lg text-sm transition-colors min-h-[44px] ${
                         active ? 'bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-900 hover:text-white'
                       }`}
                     >
-                      <Icon className={`w-4 h-4 ${item.color}`} aria-hidden="true" />
-                      <span className="relative inline-flex items-center gap-1.5">
-                        {item.label}
+                      <Icon className={`w-4 h-4 shrink-0 ${item.color}`} aria-hidden="true" />
+                      <span className="relative inline-flex items-center gap-1.5 min-w-0">
+                        <span className="truncate">{item.label}</span>
                         {item.href === '/attacks' && (
                           <span className="text-[9px] font-mono px-1 rounded bg-slate-800 border border-slate-700 text-slate-300">
                             {attackCount}

@@ -88,14 +88,14 @@ export default function AttackBrowser() {
                 type="button"
                 onClick={() => setQuery('')}
                 aria-label="Clear attack search"
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-white"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-slate-400 hover:text-white"
               >
                 <X className="w-4 h-4" aria-hidden="true" />
               </button>
             )}
           </div>
 
-          <div className="flex gap-2">
+          <div className="grid grid-cols-2 sm:flex gap-2">
             <div>
               <label htmlFor="attack-protocol" className="sr-only">Filter by protocol</label>
               <select
@@ -125,7 +125,7 @@ export default function AttackBrowser() {
               </select>
             </div>
 
-            <div>
+            <div className="col-span-2 sm:col-auto">
               <label htmlFor="attack-completion" className="sr-only">Filter by completion</label>
               <select
                 id="attack-completion"
@@ -146,7 +146,7 @@ export default function AttackBrowser() {
             type="button"
             onClick={() => setCategory('all')}
             aria-pressed={category === 'all'}
-            className={`px-2.5 py-1 rounded-md text-[11px] font-mono border transition-colors ${
+            className={`px-2.5 py-1.5 rounded-md text-[11px] font-mono border transition-colors min-h-[34px] ${
               category === 'all'
                 ? 'bg-rose-600 text-white border-rose-400'
                 : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
@@ -160,7 +160,7 @@ export default function AttackBrowser() {
               type="button"
               onClick={() => setCategory(entry.id)}
               aria-pressed={category === entry.id}
-              className={`px-2.5 py-1 rounded-md text-[11px] font-mono border transition-colors ${
+              className={`px-2.5 py-1.5 rounded-md text-[11px] font-mono border transition-colors min-h-[34px] ${
                 category === entry.id
                   ? 'bg-rose-600 text-white border-rose-400'
                   : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
@@ -179,7 +179,7 @@ export default function AttackBrowser() {
               type="button"
               onClick={() => setDifficulty(level)}
               aria-pressed={difficulty === level}
-              className={`px-2.5 py-0.5 rounded-md text-[11px] font-mono border transition-all ${
+              className={`px-2.5 py-1.5 rounded-md text-[11px] font-mono border transition-all min-h-[34px] ${
                 difficulty === level
                   ? 'bg-amber-600 text-white border-amber-400'
                   : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'

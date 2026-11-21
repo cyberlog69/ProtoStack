@@ -114,25 +114,25 @@ export default function LayersPage() {
                         : 'bg-slate-900/60 border-slate-800 hover:border-slate-700 hover:bg-slate-900'
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <span className={`w-8 h-8 rounded-lg flex items-center justify-center font-mono font-bold text-xs border ${
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className={`w-8 h-8 shrink-0 rounded-lg flex items-center justify-center font-mono font-bold text-xs border ${
                         isSelected
                           ? 'bg-indigo-600 text-white border-indigo-400'
                           : 'bg-slate-950 text-slate-400 border-slate-800'
                       }`}>
                         {layer.number}
                       </span>
-                      <div>
+                      <div className="min-w-0">
                         <div className="font-bold text-sm text-white group-hover:text-indigo-300 transition-colors">
                           {layer.name}
                         </div>
-                        <div className="text-[11px] text-slate-400 font-mono">
+                        <div className="text-[11px] text-slate-400 font-mono break-anywhere">
                           {layer.tcpIpEquivalent}
                         </div>
                       </div>
                     </div>
 
-                    <div className="text-right">
+                    <div className="text-right shrink-0 pl-2">
                       <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-300">
                         {layer.pdu}
                       </span>
@@ -145,20 +145,20 @@ export default function LayersPage() {
             {/* Quick Mapping Legend to TCP/IP */}
             <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-400 space-y-2 font-mono">
               <span className="text-slate-300 font-bold block">TCP/IP Mapping Summary:</span>
-              <div className="flex items-center justify-between text-[11px]">
+              <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px]">
                 <span className="text-purple-400">Layers 7, 6, 5 (App, Pres, Sess)</span>
                 <span className="text-slate-300">➔ TCP/IP Application</span>
               </div>
-              <div className="flex items-center justify-between text-[11px]">
+              <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px]">
                 <span className="text-cyan-400">Layer 4 (Transport)</span>
                 <span className="text-slate-300">➔ TCP/IP Transport</span>
               </div>
-              <div className="flex items-center justify-between text-[11px]">
+              <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px]">
                 <span className="text-emerald-400">Layer 3 (Network)</span>
                 <span className="text-slate-300">➔ TCP/IP Internet</span>
               </div>
-              <div className="flex items-center justify-between text-[11px]">
-                <span className="text-amber-400">Layers 2 & 1 (Data Link, Physical)</span>
+              <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px]">
+                <span className="text-amber-400">Layers 2 &amp; 1 (Data Link, Physical)</span>
                 <span className="text-slate-300">➔ TCP/IP Network Access</span>
               </div>
             </div>
@@ -223,11 +223,11 @@ export default function LayersPage() {
 
             {/* Protocols Operating at this Layer */}
             <div className="space-y-3 pt-2 border-t border-slate-800">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                 <h4 className="text-xs font-bold text-white uppercase tracking-wider font-mono">
                   Protocols at Layer {activeLayer.number}
                 </h4>
-                <span className="text-[11px] text-slate-500">Click to launch interactive session</span>
+                <span className="hidden sm:inline text-[11px] text-slate-500">Click to launch interactive session</span>
               </div>
 
               <div className="flex flex-wrap gap-2">

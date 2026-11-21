@@ -166,13 +166,13 @@ export default function ComparisonView({ initialSlugA = 'tcp', initialSlugB = 'u
       {/* Side-by-Side Comparison Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Protocol A Card */}
-        <div className="rounded-2xl border border-indigo-500/30 bg-slate-900/90 p-6 space-y-6 shadow-xl">
-          <div className="flex items-start justify-between gap-4 border-b border-slate-800 pb-4">
-            <div>
+        <div className="rounded-2xl border border-indigo-500/30 bg-slate-900/90 p-4 sm:p-6 space-y-6 shadow-xl">
+          <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-800 pb-4">
+            <div className="min-w-0">
               <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${badgeA.color}`}>
                 {badgeA.label}
               </span>
-              <h3 className="text-3xl font-extrabold text-white mt-2">
+              <h3 className="text-2xl sm:text-3xl font-extrabold text-white mt-2 break-anywhere">
                 {protocolA.name}
               </h3>
               <p className="text-xs text-indigo-300 font-mono mt-0.5">
@@ -182,7 +182,7 @@ export default function ComparisonView({ initialSlugA = 'tcp', initialSlugB = 'u
 
             <Link
               href={`/protocols/${protocolA.slug}`}
-              className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs flex items-center gap-1.5 transition-colors shadow-sm"
+              className="px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs flex items-center gap-1.5 transition-colors shadow-sm shrink-0 min-h-[38px]"
             >
               <Play className="w-3 h-3 fill-current" />
               <span>Open Protocol</span>
@@ -246,13 +246,13 @@ export default function ComparisonView({ initialSlugA = 'tcp', initialSlugB = 'u
         </div>
 
         {/* Protocol B Card */}
-        <div className="rounded-2xl border border-cyan-500/30 bg-slate-900/90 p-6 space-y-6 shadow-xl">
-          <div className="flex items-start justify-between gap-4 border-b border-slate-800 pb-4">
-            <div>
+        <div className="rounded-2xl border border-cyan-500/30 bg-slate-900/90 p-4 sm:p-6 space-y-6 shadow-xl">
+          <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-800 pb-4">
+            <div className="min-w-0">
               <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${badgeB.color}`}>
                 {badgeB.label}
               </span>
-              <h3 className="text-3xl font-extrabold text-white mt-2">
+              <h3 className="text-2xl sm:text-3xl font-extrabold text-white mt-2 break-anywhere">
                 {protocolB.name}
               </h3>
               <p className="text-xs text-cyan-300 font-mono mt-0.5">
@@ -262,7 +262,7 @@ export default function ComparisonView({ initialSlugA = 'tcp', initialSlugB = 'u
 
             <Link
               href={`/protocols/${protocolB.slug}`}
-              className="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs flex items-center gap-1.5 transition-colors shadow-sm"
+              className="px-3 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs flex items-center gap-1.5 transition-colors shadow-sm shrink-0 min-h-[38px]"
             >
               <Play className="w-3 h-3 fill-current" />
               <span>Open Protocol</span>

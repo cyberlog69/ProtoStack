@@ -118,7 +118,7 @@ export default function ProtocolDetail({
             type="button"
             onClick={() => toggleBookmark(protocol.id)}
             aria-pressed={bookmarked}
-            className={`px-3 py-1.5 rounded-lg border text-xs font-mono flex items-center gap-1.5 transition-all ${
+            className={`px-3 py-2 rounded-lg border text-xs font-mono flex items-center gap-1.5 transition-all min-h-[38px] ${
               bookmarked
                 ? 'bg-amber-500/20 text-amber-300 border-amber-500/50'
                 : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
@@ -133,7 +133,7 @@ export default function ProtocolDetail({
             type="button"
             onClick={() => toggleLearned(protocol.id)}
             aria-pressed={learned}
-            className={`px-3 py-1.5 rounded-lg border text-xs font-mono flex items-center gap-1.5 transition-all ${
+            className={`px-3 py-2 rounded-lg border text-xs font-mono flex items-center gap-1.5 transition-all min-h-[38px] ${
               learned
                 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50'
                 : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
@@ -147,7 +147,7 @@ export default function ProtocolDetail({
           {previousProtocol && (
             <Link
               href={`/protocols/${previousProtocol.slug}`}
-              className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-300 hover:border-slate-700 flex items-center gap-1 font-mono"
+              className="px-3 py-2 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-300 hover:border-slate-700 flex items-center gap-1 font-mono min-h-[38px]"
             >
               <ArrowLeft className="w-3 h-3" aria-hidden="true" />
               <span>{previousProtocol.name}</span>
@@ -156,7 +156,7 @@ export default function ProtocolDetail({
           {nextProtocol && (
             <Link
               href={`/protocols/${nextProtocol.slug}`}
-              className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-300 hover:border-slate-700 flex items-center gap-1 font-mono"
+              className="px-3 py-2 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-300 hover:border-slate-700 flex items-center gap-1 font-mono min-h-[38px]"
             >
               <span>{nextProtocol.name}</span>
               <ArrowRight className="w-3 h-3" aria-hidden="true" />
@@ -302,12 +302,12 @@ function SectionHeading({
   subtitle: string;
 }) {
   return (
-    <div className="flex items-center gap-2">
-      <div className={`w-7 h-7 rounded-lg border flex items-center justify-center ${iconClassName}`}>
+    <div className="flex items-start gap-2.5">
+      <div className={`w-7 h-7 shrink-0 rounded-lg border flex items-center justify-center ${iconClassName}`}>
         {icon}
       </div>
-      <div>
-        <h2 className="text-lg font-bold text-white">{title}</h2>
+      <div className="min-w-0">
+        <h2 className="text-lg font-bold text-white text-balance">{title}</h2>
         <p className="text-xs text-slate-400">{subtitle}</p>
       </div>
     </div>

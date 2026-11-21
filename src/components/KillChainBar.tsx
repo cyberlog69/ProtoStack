@@ -36,7 +36,7 @@ export default function KillChainBar({ steps, currentIndex, onJump }: KillChainB
               aria-current={active ? 'step' : undefined}
               aria-label={`Step ${index + 1}: ${phase?.label ?? step.phase} — ${step.title}`}
               title={`Step ${index + 1}: ${phase?.label ?? step.phase} — ${step.title}`}
-              className={`flex-1 py-1.5 px-1 text-[10px] font-mono font-bold uppercase tracking-wider transition-all rounded text-center truncate ${
+              className={`flex-1 min-h-[40px] py-1.5 px-1 text-[10px] font-mono font-bold uppercase tracking-wider transition-all rounded text-center truncate ${
                 active
                   ? `${phase?.barColor ?? 'bg-rose-500'} text-white shadow-sm shadow-black/40`
                   : past

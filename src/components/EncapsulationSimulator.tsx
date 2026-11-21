@@ -93,9 +93,9 @@ export default function EncapsulationSimulator() {
 
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-900/90 overflow-hidden shadow-2xl">
-      <div className="p-6 border-b border-slate-800 bg-slate-950/80 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
+      <div className="px-4 sm:px-6 py-4 border-b border-slate-800 bg-slate-950/80 flex flex-wrap items-center justify-between gap-4">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-indigo-400 animate-pulse" aria-hidden="true" />
             <h3 className="text-base font-bold text-white">
               Encapsulation &amp; Decapsulation Model
@@ -109,13 +109,13 @@ export default function EncapsulationSimulator() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="p-1 rounded-xl bg-slate-900 border border-slate-800 flex items-center" role="group" aria-label="Simulation direction">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="p-1 rounded-xl bg-slate-900 border border-slate-800 flex flex-wrap items-center" role="group" aria-label="Simulation direction">
             <button
               type="button"
               onClick={() => toggleDirection('encapsulate')}
               aria-pressed={direction === 'encapsulate'}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+              className={`px-2.5 sm:px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all min-h-[38px] ${
                 direction === 'encapsulate'
                   ? 'bg-indigo-600 text-white shadow-sm'
                   : 'text-slate-400 hover:text-white'
@@ -128,7 +128,7 @@ export default function EncapsulationSimulator() {
               type="button"
               onClick={() => toggleDirection('decapsulate')}
               aria-pressed={direction === 'decapsulate'}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+              className={`px-2.5 sm:px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all min-h-[38px] ${
                 direction === 'decapsulate'
                   ? 'bg-cyan-600 text-white shadow-sm'
                   : 'text-slate-400 hover:text-white'
@@ -141,20 +141,20 @@ export default function EncapsulationSimulator() {
         </div>
       </div>
 
-      <div className="p-6 md:p-8 space-y-8">
+      <div className="p-4 sm:p-6 md:p-8 space-y-8">
         <div className="flex flex-wrap items-center justify-between gap-4 bg-slate-950/60 p-4 rounded-xl border border-slate-800">
-          <div className="flex items-center gap-3" aria-live="polite">
-            <span className="w-7 h-7 rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-mono font-bold text-xs flex items-center justify-center">
+          <div className="flex items-center gap-3 min-w-0" aria-live="polite">
+            <span className="w-7 h-7 shrink-0 rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-mono font-bold text-xs flex items-center justify-center">
               L{activeStep.layerNumber}
             </span>
-            <div>
-              <div className="text-sm font-bold text-white flex items-center gap-2">
+            <div className="min-w-0">
+              <div className="text-sm font-bold text-white flex flex-wrap items-center gap-2">
                 <span>{activeStep.layerName}</span>
                 <span className="text-xs text-slate-400 font-mono font-normal">
                   — PDU: <strong className="text-indigo-400">{activeStep.pduName}</strong>
                 </span>
               </div>
-              <p className="text-xs text-emerald-400 font-mono">
+              <p className="text-xs text-emerald-400 font-mono break-anywhere">
                 {direction === 'encapsulate'
                   ? `➔ Adding: ${activeStep.headerAdded}`
                   : `➔ Stripping & verifying: ${activeStep.headerAdded}`}
@@ -162,13 +162,13 @@ export default function EncapsulationSimulator() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={handlePrev}
               disabled={currentStepIdx === 0}
               aria-label="Previous layer"
-              className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs transition-colors"
+              className="p-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
               title="Previous Layer"
             >
               <ChevronLeft className="w-4 h-4" aria-hidden="true" />
@@ -178,7 +178,7 @@ export default function EncapsulationSimulator() {
               type="button"
               onClick={handlePlayToggle}
               aria-label={isPlaying ? 'Pause auto step' : 'Start auto step'}
-              className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-md shadow-indigo-600/30"
+              className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-md shadow-indigo-600/30 min-h-[40px]"
             >
               {isPlaying ? (
                 <>
@@ -198,7 +198,7 @@ export default function EncapsulationSimulator() {
               onClick={handleNext}
               disabled={currentStepIdx === lastIndex}
               aria-label="Next layer"
-              className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs transition-colors"
+              className="p-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
               title="Next Layer"
             >
               <ChevronRight className="w-4 h-4" aria-hidden="true" />
@@ -208,10 +208,10 @@ export default function EncapsulationSimulator() {
               type="button"
               onClick={handleReset}
               aria-label="Reset simulation"
-              className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition-colors ml-1"
+              className="p-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
               title="Reset"
             >
-              <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
+              <RotateCcw className="w-4 h-4" aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -232,7 +232,7 @@ export default function EncapsulationSimulator() {
                 }}
                 aria-current={isCurrent ? 'step' : undefined}
                 aria-label={`Jump to layer ${step.layerNumber} ${step.layerName}`}
-                className={`py-2 px-1 text-center rounded-lg border transition-all ${
+                className={`py-2 px-1 min-h-[44px] text-center rounded-lg border transition-all ${
                   isCurrent
                     ? 'bg-indigo-600 text-white font-bold border-indigo-400 shadow-lg shadow-indigo-500/20 scale-105 z-10'
                     : isCompleted
@@ -241,14 +241,15 @@ export default function EncapsulationSimulator() {
                 }`}
               >
                 <div className="text-[10px] text-slate-400">L{step.layerNumber}</div>
-                <div className="truncate text-[11px] font-semibold">{step.layerName.split(' ')[0]}</div>
+                <div className="sm:hidden text-[9px] font-semibold leading-tight">{step.layerName.slice(0, 4)}</div>
+                <div className="hidden sm:block truncate text-[11px] font-semibold">{step.layerName.split(' ')[0]}</div>
               </button>
             );
           })}
         </div>
 
         <div className="rounded-2xl border border-slate-800 bg-slate-950 p-6 space-y-4">
-          <div className="flex items-center justify-between text-xs font-mono text-slate-400 border-b border-slate-800 pb-3">
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs font-mono text-slate-400 border-b border-slate-800 pb-3">
             <span>
               PACKET STRUCTURE AT LAYER {activeStep.layerNumber} ({activeStep.pduName.toUpperCase()})
             </span>
@@ -285,9 +286,9 @@ export default function EncapsulationSimulator() {
                 </div>
               )}
 
-              <div className="flex-1 min-w-[200px] px-3.5 py-2 rounded-lg bg-purple-950/60 border border-purple-500/50 text-purple-200">
+              <div className="flex-1 min-w-0 sm:min-w-[200px] px-3.5 py-2 rounded-lg bg-purple-950/60 border border-purple-500/50 text-purple-200">
                 <span className="block text-[10px] text-purple-400/80 font-bold">L7 APPLICATION DATA</span>
-                <span className="truncate block font-mono text-[11px]">{customPayload || '(empty payload)'}</span>
+                <span className="break-anywhere block font-mono text-[11px]">{customPayload || '(empty payload)'}</span>
               </div>
 
               {showDataLink && (

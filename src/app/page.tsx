@@ -85,8 +85,8 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-grid-pattern opacity-30 pointer-events-none" />
         
         {/* Ambient Glow Orbs */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[350px] bg-indigo-600/15 rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute top-1/3 left-1/4 w-[350px] h-[250px] bg-cyan-500/10 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] h-[220px] sm:w-[550px] sm:h-[350px] bg-indigo-600/15 rounded-full blur-[80px] sm:blur-[120px] pointer-events-none" />
+        <div className="absolute top-1/3 left-1/4 w-[220px] h-[160px] sm:w-[350px] sm:h-[250px] bg-cyan-500/10 rounded-full blur-[70px] sm:blur-[100px] pointer-events-none" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center space-y-6">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-mono font-medium shadow-sm">
@@ -94,14 +94,14 @@ export default function HomePage() {
             <span>{PROTOCOLS.length} interactive networking, internet &amp; IoT protocols</span>
           </div>
 
-          <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white max-w-4xl mx-auto leading-tight">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white max-w-4xl mx-auto leading-[1.1] text-balance">
             See How Protocols Work —{' '}
-            <span className="bg-gradient-to-r from-indigo-400 via-cyan-400 to-emerald-400 bg-clip-text text-transparent">
+            <span className="inline-block whitespace-nowrap bg-gradient-to-r from-indigo-400 via-cyan-400 to-emerald-400 bg-clip-text text-transparent">
               Step-by-Step
             </span>
           </h1>
 
-          <p className="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed text-pretty">
             Click any protocol to launch an <strong>animated step-by-step session</strong>. Watch packets travel between clients, servers, and IoT brokers with sandboxes that are explicitly labelled live or simulated.
           </p>
 
@@ -170,19 +170,19 @@ export default function HomePage() {
             </div>
 
             {/* OSI Layer Selector */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 text-xs">
+            <div className="flex flex-wrap items-center gap-2 text-xs">
               <span className="text-slate-500 text-xs font-mono flex items-center gap-1 shrink-0">
                 <Layers className="w-3.5 h-3.5" />
                 OSI Layer:
               </span>
-              <div className="flex gap-1.5 shrink-0">
+              <div className="flex flex-wrap gap-1.5">
                 {OSI_LAYERS.map((layer) => (
                   <button
                     key={layer}
                     type="button"
                     onClick={() => setSelectedLayer(layer)}
                     aria-pressed={selectedLayer === layer}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-mono transition-colors ${
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-mono transition-colors ${
                       selectedLayer === layer
                         ? 'bg-indigo-600 text-white font-bold'
                         : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white'
@@ -203,7 +203,7 @@ export default function HomePage() {
                 key={term}
                 type="button"
                 onClick={() => setSearchQuery(term)}
-                className="px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800 hover:border-slate-700 hover:text-indigo-300 font-mono text-[11px] text-slate-400 transition-colors"
+                className="px-2 py-1 rounded-md bg-slate-900 border border-slate-800 hover:border-slate-700 hover:text-indigo-300 font-mono text-[11px] text-slate-400 transition-colors"
               >
                 {term}
               </button>
@@ -258,7 +258,7 @@ export default function HomePage() {
         )}
 
         {/* Results Counter */}
-        <div className="flex items-center justify-between text-xs text-slate-400 font-mono border-b border-slate-800 pb-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400 font-mono border-b border-slate-800 pb-2">
           <span>
             Showing <strong className="text-white">{filteredProtocols.length}</strong> of {PROTOCOLS.length} protocols
           </span>
