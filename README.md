@@ -7,6 +7,8 @@
 
 **ProtoStack** is an open-source learning platform for computer networking, internet, and IoT protocols. It combines 80 full protocol lessons and 80 reference cards with step-by-step packet-flow models, OSI/TCP-IP layer views, side-by-side comparisons, quizzes, and sandboxes that are explicitly labelled **live** or **simulated**. Coverage is tiered and published on `/coverage`, so the site states what it teaches and what it does not.
 
+It is free to use with **no account, no paywall, no ads and no tracking**. Progress, bookmarks and quiz scores live in the browser's `localStorage`, can be exported and imported as JSON, and can be printed as a self-study record. That record is explicitly **not an accredited certificate**.
+
 Repository: [https://github.com/cyberlog69/ProtoStack](https://github.com/cyberlog69/ProtoStack)
 
 ---
@@ -52,9 +54,12 @@ Category counts are derived from the data at build time, so they cannot drift fr
 ### Learning path and reference library
 
 - **`/start`** - a five-module beginner path (18 lessons) ordered so every lesson only uses ideas introduced earlier. Progress is stored locally, and prerequisites that are still unread are flagged inline.
+- **Home "continue learning" strip** - returning visitors land on the next unfinished path lesson instead of having to remember where they stopped.
+- **Curriculum navigation** - each lesson on the path shows its position, the module, and previous/next lessons, plus a "continue to the next lesson" hand-off after the quiz. Catalog-wide previous/next links remain available.
 - **`/reference`** - 80 compact reference cards for standards without a full lesson: routing, web, security, telecom, storage, industrial, management, discovery, tunnelling and legacy protocols, each with layer, specification, port and status.
 - **`/glossary`** — 116 networking terms defined in plain language, searchable and filterable by letter.
 - **`/standards`** — how to read an RFC: document statuses, MUST/SHOULD/MAY, document anatomy, errata, a seven-step reading method and a first-documents exercise.
+- **`/record`** — a printable, exportable learning record. It summarises path completion, catalog progress, best quiz results and passed defender challenges, and lets you export/import a JSON backup or reset local data. No account is involved, and the page states plainly that it is not an accredited certificate.
 
 ### Threat models and simulated attacks (`/attacks`)
 
@@ -103,7 +108,9 @@ Category counts are derived from the data at build time, so they cannot drift fr
 
 ### Search (`Ctrl+K` / `⌘K`)
 
-- Lazy-loaded dialog searching names, abbreviations, ports, RFCs, layers, features, and use cases.
+- Lazy-loaded dialog searching the whole platform in one place: protocol lessons, reference cards, glossary terms, attack scenarios and learning pages.
+- Matches names, abbreviations, ports, RFCs, layers, features, use cases, standards, definitions, detections and mitigations.
+- Results are ranked (exact title matches first) and labelled by content type; deep links jump to the protocol page, glossary term, reference card or attack card.
 - Focus trap, Escape to close, focus restoration, and body scroll lock.
 
 ---
@@ -202,6 +209,7 @@ ProtoStack/
 │   │   ├── coverage/page.tsx             # tiered coverage matrix, catalog and roadmap
 │   │   ├── glossary/page.tsx             # searchable terminology browser
 │   │   ├── reference/page.tsx            # filterable reference-card registry
+│   │   ├── record/page.tsx               # printable/exportable local learning record
 │   │   ├── standards/page.tsx            # how to read an RFC
 │   │   ├── start/page.tsx                # prerequisite-ordered beginner path
 │   │   ├── dashboard/                    # local progress dashboard (+ noindex metadata)
@@ -222,13 +230,15 @@ ProtoStack/
 │   │   ├── KillChainBar.tsx              # three-phase attack timeline
 │   │   ├── DefenderChallenge.tsx         # scored detection/mitigation quiz
 │   │   ├── CurriculumBoard.tsx           # Start Here path with local progress
+│   │   ├── ContinueLearning.tsx          # home-page resume strip
 │   │   ├── GlossaryBrowser.tsx           # glossary search and letter filter
 │   │   ├── ReferenceBrowser.tsx          # reference-card filters
 │   │   ├── InteractiveVisualizer.tsx     # packet-flow animation and inspector
 │   │   ├── EncapsulationSimulator.tsx    # L7→L1 model with computed payload output
 │   │   ├── ComparisonView.tsx            # side-by-side comparison
 │   │   ├── QuizSection.tsx               # per-protocol quiz
-│   │   ├── SearchModal.tsx               # Ctrl+K dialog
+│   │   ├── SearchModal.tsx               # Ctrl+K unified search dialog
+│   │   ├── LearningRecord.tsx            # printable record and progress backup/restore
 │   │   └── sandboxes/                    # DNS, HTTP, MQTT, TCP, WebSocket, generic
 │   ├── context/ProgressContext.tsx       # typed localStorage progress state
 │   ├── data/
@@ -248,8 +258,11 @@ ProtoStack/
 │   │   └── protocols/                    # eleven data files, 80 protocols
 │   ├── lib/
 │   │   ├── hex.ts                        # CRC-32, hex dump, bit string
+│   │   ├── progress-transfer.ts          # versioned, validated JSON progress backup
 │   │   ├── rate-limit.ts                 # in-memory fixed-window limiter
+│   │   ├── search.ts                     # unified search index and ranking
 │   │   ├── site.ts                       # canonical URL helpers
+│   │   ├── slug.ts                       # stable glossary anchors
 │   │   ├── url-safety.ts                 # outbound URL and DNS validation
 │   │   └── utils.ts                      # styling helpers
 │   └── types/protocol.ts                 # protocol, step, packet, quiz types
@@ -259,6 +272,8 @@ ProtoStack/
 │   ├── content.test.ts                   # curriculum, glossary and reference registry
 │   ├── layouts.test.ts                   # header bit widths and protocol stacks
 │   ├── attacks.test.ts                   # attack coverage, phases, MITRE and difficulty
+│   ├── search.test.ts                    # unified search coverage, links and ranking
+│   ├── progress.test.ts                  # backup/restore validation and round-trip
 │   └── url-safety.test.ts                # SSRF-oriented URL validation
 ├── eslint.config.mjs
 ├── next.config.mjs                       # security headers, CSP, standalone output

@@ -3,6 +3,7 @@
 import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { GLOSSARY, glossaryLetters } from '@/data/glossary';
+import { slugify } from '@/lib/slug';
 import { ArrowUpRight, Search, X } from 'lucide-react';
 
 const LETTERS = glossaryLetters();
@@ -101,7 +102,11 @@ export default function GlossaryBrowser() {
       ) : (
         <dl className="rounded-2xl border border-slate-800 bg-slate-900/40 divide-y divide-slate-800 overflow-hidden">
           {filtered.map((entry) => (
-            <div key={entry.term} className="p-4 sm:p-5 hover:bg-slate-900/60 transition-colors">
+            <div
+              key={entry.term}
+              id={`term-${slugify(entry.term)}`}
+              className="p-4 sm:p-5 hover:bg-slate-900/60 transition-colors scroll-mt-24"
+            >
               <dt className="flex flex-wrap items-baseline gap-2">
                 <span className="text-sm font-bold text-white font-mono">{entry.term}</span>
                 {entry.see && (

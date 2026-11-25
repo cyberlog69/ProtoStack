@@ -69,7 +69,11 @@ export default function StartPage() {
 
         <p className="text-sm text-slate-400 max-w-3xl">
           It takes roughly 4–6 hours if you read the flow, open the sandbox and take the quiz for each lesson. Marking a
-          lesson learned is stored locally in your browser.
+          lesson learned is stored locally in your browser. The path is free, needs no account, and you can{' '}
+          <Link href="/record" className="text-indigo-300 hover:underline">
+            print or export your record
+          </Link>{' '}
+          at any time.
         </p>
       </header>
 
@@ -116,6 +120,13 @@ export default function StartPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2 shrink-0">
+          <Link
+            href="/record"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2 rounded-lg bg-emerald-600/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-600 hover:text-white transition-colors"
+          >
+            Learning record
+            <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+          </Link>
           <Link
             href="/coverage"
             className="inline-flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors"

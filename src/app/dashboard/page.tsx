@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { PROTOCOLS } from '@/data/protocols';
+import { ATTACKS } from '@/data/attacks';
 import { useProgress } from '@/context/ProgressContext';
 import {
   Award,
@@ -15,6 +16,7 @@ import {
   Shield,
   Globe,
   Brain,
+  ScrollText,
 } from 'lucide-react';
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -29,11 +31,20 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 export default function DashboardPage() {
-  const { learnedProtocols, bookmarkedProtocols, quizScores, toggleLearned, toggleBookmark } = useProgress();
+  const { learnedProtocols, bookmarkedProtocols, quizScores, attackScores, toggleLearned, toggleBookmark } =
+    useProgress();
 
   const totalProtocols = PROTOCOLS.length;
-  const learnedCount = learnedProtocols.length;
+  const knownProtocolIds = new Set(PROTOCOLS.map((protocol) => protocol.id));
+  const learnedIds = learnedProtocols.filter((id) => knownProtocolIds.has(id));
+  const learnedSet = new Set(learnedIds);
+  const learnedCount = learnedIds.length;
   const progressPercent = totalProtocols > 0 ? Math.round((learnedCount / totalProtocols) * 100) : 0;
+
+  const attacksPassed = ATTACKS.filter((attack) => {
+    const score = attackScores[attack.id];
+    return score && score.total > 0 && score.score === score.total;
+  }).length;
 
   const bookmarkedItems = PROTOCOLS.filter((protocol) => bookmarkedProtocols.includes(protocol.id));
 
@@ -108,11 +119,19 @@ export default function DashboardPage() {
             <p className="text-sm text-slate-300 mt-1">
               Track protocols learned, quiz results, bookmarked references, and curated study roadmaps.
             </p>
+            <Link
+              href="/record"
+              className="inline-flex items-center gap-1.5 mt-3 px-3 py-2 rounded-lg bg-slate-900 border border-slate-800 text-xs font-semibold text-indigo-300 hover:border-indigo-500/40 hover:text-indigo-200 transition-colors min-h-[36px]"
+            >
+              <ScrollText className="w-3.5 h-3.5" aria-hidden="true" />
+              Open your learning record
+            </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full md:w-auto">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full md:w-auto">
             <StatCard label="Overall Mastery" value={`${progressPercent}%`} detail={`${learnedCount} of ${totalProtocols}`} />
             <StatCard label="Quiz Average" value={`${averageQuizPercent}%`} detail={`${quizEntries.length} saved`} />
+            <StatCard label="Defences" value={String(attacksPassed)} detail={`of ${ATTACKS.length} passed`} />
             <StatCard label="Bookmarks" value={String(bookmarkedItems.length)} detail="Saved references" />
           </div>
         </div>
@@ -144,7 +163,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {LEARNING_PATHS.map((path) => {
             const pathProtocols = PROTOCOLS.filter((protocol) => path.slugs.includes(protocol.slug));
-            const pathLearnedCount = pathProtocols.filter((protocol) => learnedProtocols.includes(protocol.id)).length;
+            const pathLearnedCount = pathProtocols.filter((protocol) => learnedSet.has(protocol.id)).length;
             const pathPercent =
               pathProtocols.length > 0 ? Math.round((pathLearnedCount / pathProtocols.length) * 100) : 0;
 
@@ -178,7 +197,7 @@ export default function DashboardPage() {
 
                 <div className="flex flex-wrap gap-1.5 pt-2">
                   {pathProtocols.map((protocol) => {
-                    const isDone = learnedProtocols.includes(protocol.id);
+                    const isDone = learnedSet.has(protocol.id);
                     return (
                       <Link
                         key={protocol.id}

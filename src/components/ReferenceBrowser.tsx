@@ -107,7 +107,8 @@ export default function ReferenceBrowser() {
             return (
               <article
                 key={entry.id}
-                className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5 space-y-3 hover:border-slate-700 transition-colors"
+                id={entry.id}
+                className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5 space-y-3 hover:border-slate-700 transition-colors scroll-mt-24"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">

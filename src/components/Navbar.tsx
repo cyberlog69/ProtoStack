@@ -14,6 +14,7 @@ import {
   Compass,
   ShieldAlert,
   Menu,
+  ScrollText,
   X,
 } from 'lucide-react';
 
@@ -27,6 +28,10 @@ const NAV_ITEMS = [
   { href: '/attacks', label: 'Attacks', icon: ShieldAlert, color: 'text-rose-400' },
   { href: '/quiz', label: 'Quizzes', icon: Brain, color: 'text-amber-400' },
   { href: '/dashboard', label: 'Dashboard', icon: Award, color: 'text-emerald-400' },
+];
+
+const MOBILE_ONLY_ITEMS = [
+  { href: '/record', label: 'My record', icon: ScrollText, color: 'text-cyan-400' },
 ];
 
 export default function Navbar({ attackCount }: { attackCount: number }) {
@@ -129,11 +134,11 @@ export default function Navbar({ attackCount }: { attackCount: number }) {
               type="button"
               onClick={openSearch}
               className="text-xs font-mono px-2.5 sm:px-3 py-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 hover:border-slate-700 hover:bg-slate-800/50 flex items-center gap-2 transition-all cursor-pointer shadow-sm min-h-[40px]"
-              title="Search all protocols (Ctrl+K)"
-              aria-label="Search all protocols"
+              title="Search lessons, glossary, attacks and reference (Ctrl+K)"
+              aria-label="Search all learning content"
             >
               <Search className="w-3.5 h-3.5 text-indigo-400" aria-hidden="true" />
-              <span className="hidden xl:inline">Search protocols...</span>
+              <span className="hidden xl:inline">Search everything...</span>
               <kbd className="hidden md:inline text-[10px] bg-slate-800 border border-slate-700 px-1.5 py-0.5 rounded text-slate-400">
                 Ctrl K
               </kbd>
@@ -181,6 +186,25 @@ export default function Navbar({ attackCount }: { attackCount: number }) {
                           </span>
                         )}
                       </span>
+                    </Link>
+                  </li>
+                );
+              })}
+              {MOBILE_ONLY_ITEMS.map((item) => {
+                const Icon = item.icon;
+                const active = isActive(item.href);
+                return (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      aria-current={active ? 'page' : undefined}
+                      className={`flex items-center gap-2.5 px-3 py-3 rounded-lg text-sm transition-colors min-h-[44px] ${
+                        active ? 'bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-900 hover:text-white'
+                      }`}
+                    >
+                      <Icon className={`w-4 h-4 shrink-0 ${item.color}`} aria-hidden="true" />
+                      <span className="truncate">{item.label}</span>
                     </Link>
                   </li>
                 );

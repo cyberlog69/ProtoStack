@@ -1,24 +1,39 @@
 'use client';
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import {
+  createProgressSnapshot,
+  parseProgressSnapshot,
+  parseScoreMap,
+  serializeProgressSnapshot,
+  type StoredScore,
+} from '@/lib/progress-transfer';
 
-export interface QuizScore {
-  score: number;
-  total: number;
-  updatedAt: string;
-}
+export type QuizScore = StoredScore;
+
+export type ProgressImportResult =
+  | { ok: true; lessons: number; quizzes: number; attacks: number }
+  | { ok: false; error: string };
 
 interface ProgressContextType {
   learnedProtocols: string[];
   bookmarkedProtocols: string[];
   quizScores: Record<string, QuizScore>;
   attackScores: Record<string, QuizScore>;
+  /** True once localStorage has been read, so callers can avoid rendering zeroes first. */
+  isLoaded: boolean;
   toggleLearned: (protocolId: string) => void;
   toggleBookmark: (protocolId: string) => void;
   isLearned: (protocolId: string) => boolean;
   isBookmarked: (protocolId: string) => boolean;
   saveQuizScore: (quizId: string, score: number, total: number) => void;
   saveAttackScore: (attackId: string, score: number, total: number) => void;
+  /** Versioned JSON backup of everything stored locally. */
+  exportProgress: () => string;
+  /** Replace local progress from a backup created by exportProgress. */
+  importProgress: (raw: string) => ProgressImportResult;
+  /** Delete all locally stored progress. */
+  resetProgress: () => void;
 }
 
 const ProgressContext = createContext<ProgressContextType | undefined>(undefined);
@@ -27,6 +42,7 @@ const LEARNED_KEY = 'protostack_learned';
 const BOOKMARKS_KEY = 'protostack_bookmarks';
 const SCORES_KEY = 'protostack_scores';
 const ATTACK_SCORES_KEY = 'protostack_attack_scores';
+const STORAGE_KEYS = [LEARNED_KEY, BOOKMARKS_KEY, SCORES_KEY, ATTACK_SCORES_KEY];
 
 function parseStringArray(raw: string | null): string[] {
   if (!raw) return [];
@@ -38,31 +54,10 @@ function parseStringArray(raw: string | null): string[] {
   }
 }
 
-function parseScores(raw: string | null): Record<string, QuizScore> {
+function readScores(raw: string | null): Record<string, QuizScore> {
   if (!raw) return {};
   try {
-    const parsed: unknown = JSON.parse(raw);
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
-
-    const scores: Record<string, QuizScore> = {};
-    for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
-      if (!value || typeof value !== 'object') continue;
-      const candidate = value as Partial<QuizScore>;
-      if (
-        typeof candidate.score === 'number' &&
-        Number.isFinite(candidate.score) &&
-        typeof candidate.total === 'number' &&
-        Number.isFinite(candidate.total) &&
-        candidate.total > 0
-      ) {
-        scores[key] = {
-          score: Math.max(0, Math.min(candidate.score, candidate.total)),
-          total: candidate.total,
-          updatedAt: typeof candidate.updatedAt === 'string' ? candidate.updatedAt : new Date().toISOString(),
-        };
-      }
-    }
-    return scores;
+    return parseScoreMap(JSON.parse(raw));
   } catch {
     return {};
   }
@@ -78,8 +73,8 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
   const loadFromStorage = useCallback(() => {
     setLearnedProtocols(parseStringArray(localStorage.getItem(LEARNED_KEY)));
     setBookmarkedProtocols(parseStringArray(localStorage.getItem(BOOKMARKS_KEY)));
-    setQuizScores(parseScores(localStorage.getItem(SCORES_KEY)));
-    setAttackScores(parseScores(localStorage.getItem(ATTACK_SCORES_KEY)));
+    setQuizScores(readScores(localStorage.getItem(SCORES_KEY)));
+    setAttackScores(readScores(localStorage.getItem(ATTACK_SCORES_KEY)));
   }, []);
 
   useEffect(() => {
@@ -107,7 +102,7 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
   // Keep multiple tabs in sync.
   useEffect(() => {
     const handleStorage = (event: StorageEvent) => {
-      if (![LEARNED_KEY, BOOKMARKS_KEY, SCORES_KEY, ATTACK_SCORES_KEY].includes(event.key || '')) return;
+      if (!STORAGE_KEYS.includes(event.key || '')) return;
       try {
         loadFromStorage();
       } catch {
@@ -191,30 +186,81 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const exportProgress = useCallback(
+    () =>
+      serializeProgressSnapshot(
+        createProgressSnapshot({
+          learnedProtocols,
+          bookmarkedProtocols,
+          quizScores,
+          attackScores,
+        }),
+      ),
+    [attackScores, bookmarkedProtocols, learnedProtocols, quizScores],
+  );
+
+  const importProgress = useCallback((raw: string): ProgressImportResult => {
+    const parsed = parseProgressSnapshot(raw);
+    if (!parsed.ok) return parsed;
+
+    const { snapshot } = parsed;
+    setLearnedProtocols(snapshot.learnedProtocols);
+    setBookmarkedProtocols(snapshot.bookmarkedProtocols);
+    setQuizScores(snapshot.quizScores);
+    setAttackScores(snapshot.attackScores);
+
+    return {
+      ok: true,
+      lessons: snapshot.learnedProtocols.length,
+      quizzes: Object.keys(snapshot.quizScores).length,
+      attacks: Object.keys(snapshot.attackScores).length,
+    };
+  }, []);
+
+  const resetProgress = useCallback(() => {
+    setLearnedProtocols([]);
+    setBookmarkedProtocols([]);
+    setQuizScores({});
+    setAttackScores({});
+    try {
+      for (const key of STORAGE_KEYS) localStorage.removeItem(key);
+    } catch {
+      // State is still cleared even if storage is unavailable.
+    }
+  }, []);
+
   const value = useMemo(
     () => ({
       learnedProtocols,
       bookmarkedProtocols,
       quizScores,
       attackScores,
+      isLoaded,
       toggleLearned,
       toggleBookmark,
       isLearned,
       isBookmarked,
       saveQuizScore,
       saveAttackScore,
+      exportProgress,
+      importProgress,
+      resetProgress,
     }),
     [
       learnedProtocols,
       bookmarkedProtocols,
       quizScores,
       attackScores,
+      isLoaded,
       toggleLearned,
       toggleBookmark,
       isLearned,
       isBookmarked,
       saveQuizScore,
       saveAttackScore,
+      exportProgress,
+      importProgress,
+      resetProgress,
     ],
   );
 

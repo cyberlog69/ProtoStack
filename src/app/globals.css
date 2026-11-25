@@ -121,3 +121,48 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* The learning record is the one page designed to be printed or saved as PDF.
+   Strip the dark chrome and use plain ink so it stays readable on paper. */
+@media print {
+  @page {
+    margin: 14mm;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    color: #111111 !important;
+    min-width: 0;
+  }
+
+  body > header,
+  body > footer,
+  .skip-link,
+  .no-print {
+    display: none !important;
+  }
+
+  main,
+  [data-print-document] {
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  [data-print-document] * {
+    color: #111111 !important;
+    background: transparent !important;
+    border-color: #cbd5e1 !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  [data-print-document] [data-print-fill] {
+    background: #475569 !important;
+  }
+
+  [data-print-document] a {
+    text-decoration: none;
+  }
+}

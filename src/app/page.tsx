@@ -6,6 +6,7 @@ import { PROTOCOLS, CATEGORIES_META } from '@/data/protocols';
 import { Protocol } from '@/types/protocol';
 import { ATTACKS } from '@/data/attacks';
 import ProtocolCard from '@/components/ProtocolCard';
+import ContinueLearning from '@/components/ContinueLearning';
 import { Search, Layers, Cpu, Terminal, Sparkles, Activity, X, ShieldAlert, ArrowRight } from 'lucide-react';
 
 export default function HomePage() {
@@ -136,8 +137,22 @@ export default function HomePage() {
               <span>TCP 3-Way Handshake</span>
             </Link>
           </div>
+
+          <p className="text-[11px] font-mono text-slate-500 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+            <span className="text-emerald-400">Free and open source</span>
+            <span aria-hidden="true">·</span>
+            <span>No account</span>
+            <span aria-hidden="true">·</span>
+            <span>No ads or tracking</span>
+            <span aria-hidden="true">·</span>
+            <Link href="/record" className="text-indigo-300 hover:text-indigo-200 underline underline-offset-2">
+              Progress stays in your browser
+            </Link>
+          </p>
         </div>
       </section>
+
+      <ContinueLearning />
 
       {/* Main Protocol Catalog & Interactive Explorer */}
       <section id="protocols" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">

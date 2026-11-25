@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { PROTOCOLS } from '@/data/protocols';
 import { QuizQuestion } from '@/types/protocol';
 import { useProgress } from '@/context/ProgressContext';
 import confetti from 'canvas-confetti';
-import { Award, CheckCircle2, XCircle, RotateCcw, Brain, ArrowRight } from 'lucide-react';
+import { Award, CheckCircle2, XCircle, RotateCcw, Brain, ArrowRight, ScrollText } from 'lucide-react';
 
 const CATEGORY_FILTERS = [
   { id: 'all', label: 'All Protocols' },
@@ -144,7 +145,7 @@ export default function QuizArenaPage() {
       <div className="text-center space-y-3 pt-4">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-mono font-medium">
           <Brain className="w-3.5 h-3.5 text-amber-400" aria-hidden="true" />
-          <span>Interactive Protocol Certification &amp; Knowledge Arena</span>
+          <span>Free practice arena · no account needed</span>
         </div>
 
         <h1 className="text-4xl sm:text-5xl font-black text-white tracking-tight">
@@ -155,7 +156,8 @@ export default function QuizArenaPage() {
         </h1>
 
         <p className="text-base text-slate-300 max-w-xl mx-auto leading-relaxed">
-          Test your mastery of OSI layers, RFC specs, frame headers, and IoT protocols.
+          Test your mastery of OSI layers, RFC specs, frame headers, and IoT protocols. Every answer is explained.
+          These are self-assessment questions, not an accredited certification.
         </p>
       </div>
 
@@ -328,6 +330,10 @@ export default function QuizArenaPage() {
               {Math.round((score / allQuestions.length) * 100)}%)
             </p>
             <p className="text-xs text-slate-400">Best scores are saved automatically in this browser.</p>
+            <p className="text-[11px] text-slate-500 max-w-md mx-auto">
+              This is a practice result, not an accredited certificate. Your best score is included in the learning
+              record you control.
+            </p>
           </div>
 
           <div className="pt-4 flex flex-wrap justify-center gap-4">
@@ -346,6 +352,13 @@ export default function QuizArenaPage() {
             >
               Retry same order
             </button>
+            <Link
+              href="/record"
+              className="px-5 py-2.5 rounded-xl bg-emerald-600/20 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-600 hover:text-white text-xs font-semibold flex items-center gap-2 transition-colors"
+            >
+              <ScrollText className="w-4 h-4" aria-hidden="true" />
+              Open learning record
+            </Link>
           </div>
         </div>
       ) : (

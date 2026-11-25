@@ -395,6 +395,16 @@ export default function CoveragePage() {
               detail: `${ATTACKS.length} simulated attack scenarios with detection and defences.`,
             },
             {
+              href: '/quiz',
+              label: 'Knowledge checks',
+              detail: 'Free practice questions with an explanation for every answer.',
+            },
+            {
+              href: '/record',
+              label: 'Learning record',
+              detail: 'Printable, exportable summary of local lessons, quizzes and defences.',
+            },
+            {
               href: '/glossary',
               label: 'Glossary',
               detail: 'Every acronym used by the lessons, defined in plain language.',

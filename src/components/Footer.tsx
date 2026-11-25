@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { PROTOCOLS } from '@/data/protocols';
-import { Layers, Cpu, Network, Terminal, ArrowLeftRight, Brain, Award, BookOpen, Compass, Library, BookMarked, FileText, Map as MapIcon, ShieldAlert } from 'lucide-react';
+import { Layers, Cpu, Network, Terminal, ArrowLeftRight, Brain, Award, BookOpen, Compass, Library, BookMarked, FileText, Map as MapIcon, ShieldAlert, ScrollText } from 'lucide-react';
 
 const EXPLORE_LINKS = [
   { href: '/start', label: 'Start Here Path', icon: Compass },
@@ -14,6 +14,7 @@ const EXPLORE_LINKS = [
   { href: '/standards', label: 'How to Read an RFC', icon: FileText },
   { href: '/quiz', label: 'Knowledge Arena', icon: Brain },
   { href: '/dashboard', label: 'Learning Dashboard', icon: Award },
+  { href: '/record', label: 'Learning Record', icon: ScrollText },
 ];
 
 export default function Footer() {
@@ -29,10 +30,13 @@ export default function Footer() {
               <span className="font-bold text-white text-base">ProtoStack</span>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Open-source interactive platform for computer networking, internet, and IoT protocols. Live resolvers
-              and local simulations are labelled honestly; fabricated responses are never used.
+              Free, open-source interactive platform for computer networking, internet, and IoT protocols. No account,
+              no ads, no tracking. Live resolvers and local simulations are labelled honestly; fabricated responses are
+              never used.
             </p>
-            <p className="text-[11px] text-slate-400 font-mono">MIT licensed</p>
+            <p className="text-[11px] text-slate-400 font-mono">
+              MIT licensed · progress stays in your browser
+            </p>
           </div>
 
           <div>
@@ -89,7 +93,7 @@ export default function Footer() {
         </div>
 
         <div className="pt-8 border-t border-slate-800/60 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-4">
-          <p>© {new Date().getFullYear()} ProtoStack. Designed for engineers, students &amp; developers.</p>
+          <p>© {new Date().getFullYear()} ProtoStack. Free forever, with no account required.</p>
           <p>Built with Next.js, Tailwind CSS &amp; TypeScript</p>
         </div>
       </div>
